@@ -216,6 +216,12 @@ function AppPage() {
                 <span className="hidden sm:inline">Salvati</span>
               </Button>
             </Link>
+            <Link to="/settings">
+              <Button variant="ghost" size="sm" className="rounded-lg gap-2">
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline">Studio</span>
+              </Button>
+            </Link>
             <ThemeToggle />
             {isSubscribed ? (
               <span className="text-xs font-semibold text-valora-green uppercase tracking-wider px-2 py-1 rounded-md bg-valora-green/10">
