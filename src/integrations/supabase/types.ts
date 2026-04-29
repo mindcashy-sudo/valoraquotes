@@ -68,6 +68,84 @@ export type Database = {
         }
         Relationships: []
       }
+      studio_profiles: {
+        Row: {
+          address: string | null
+          albo_number: string | null
+          architect_name: string | null
+          city: string | null
+          created_at: string
+          default_terms: string | null
+          default_validity_days: number
+          default_vat_percent: number
+          default_work_zone: string | null
+          email: string | null
+          fiscal_code: string | null
+          iban: string | null
+          id: string
+          logo_url: string | null
+          onboarding_completed: boolean
+          pec: string | null
+          phone: string | null
+          postal_code: string | null
+          province: string | null
+          studio_name: string | null
+          updated_at: string
+          user_id: string
+          vat_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          albo_number?: string | null
+          architect_name?: string | null
+          city?: string | null
+          created_at?: string
+          default_terms?: string | null
+          default_validity_days?: number
+          default_vat_percent?: number
+          default_work_zone?: string | null
+          email?: string | null
+          fiscal_code?: string | null
+          iban?: string | null
+          id?: string
+          logo_url?: string | null
+          onboarding_completed?: boolean
+          pec?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
+          studio_name?: string | null
+          updated_at?: string
+          user_id: string
+          vat_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          albo_number?: string | null
+          architect_name?: string | null
+          city?: string | null
+          created_at?: string
+          default_terms?: string | null
+          default_validity_days?: number
+          default_vat_percent?: number
+          default_work_zone?: string | null
+          email?: string | null
+          fiscal_code?: string | null
+          iban?: string | null
+          id?: string
+          logo_url?: string | null
+          onboarding_completed?: boolean
+          pec?: string | null
+          phone?: string | null
+          postal_code?: string | null
+          province?: string | null
+          studio_name?: string | null
+          updated_at?: string
+          user_id?: string
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
