@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut } from "lucide-react";
+import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings } from "lucide-react";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
 import { QuoteEditor } from "@/components/QuoteEditor";
@@ -8,6 +8,7 @@ import { Paywall } from "@/components/Paywall";
 import { generateQuote } from "@/server/generate-quote.functions";
 import { getQuoteStatus, saveQuoteFn, migrateLocalQuotes } from "@/server/quotes.functions";
 import { syncCheckoutSession, syncCurrentStripeSubscription } from "@/server/stripe.functions";
+import { getStudioProfile } from "@/server/studio.functions";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/lib/auth-context";
@@ -42,6 +43,7 @@ function AppPage() {
   const [limit, setLimit] = useState(3);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [syncingPayment, setSyncingPayment] = useState(false);
+  const [workZone, setWorkZone] = useState<string | null>(null);
 
   // Auth guard
   useEffect(() => {
@@ -53,6 +55,15 @@ function AppPage() {
     if (!user) return;
     const run = async () => {
       try {
+        // Check studio profile / onboarding
+        const studioRes = await getStudioProfile();
+        const studio = studioRes.profile;
+        if (!studio || !studio.onboarding_completed) {
+          navigate({ to: "/onboarding" });
+          return;
+        }
+        setWorkZone(studio.default_work_zone ?? null);
+
         const local = getSavedQuotes();
         const migratedKey = `valora_migrated_${user.id}`;
         if (local.length > 0 && !localStorage.getItem(migratedKey)) {
@@ -108,7 +119,7 @@ function AppPage() {
       }
     };
     run();
-  }, [user]);
+  }, [user, navigate]);
 
   const handleTranscription = (text: string) => {
     setTranscription(text);
@@ -126,7 +137,10 @@ function AppPage() {
 
     try {
       const result = await generateQuote({
-        data: { transcription: transcription.trim().slice(0, 2000) },
+        data: {
+          transcription: transcription.trim().slice(0, 2000),
+          ...(workZone ? { workZone } : {}),
+        },
       });
       if ("error" in result && result.error) {
         setError(result.error);
@@ -200,6 +214,12 @@ function AppPage() {
               <Button variant="ghost" size="sm" className="rounded-lg gap-2">
                 <FolderOpen className="w-4 h-4" />
                 <span className="hidden sm:inline">Salvati</span>
+              </Button>
+            </Link>
+            <Link to="/settings">
+              <Button variant="ghost" size="sm" className="rounded-lg gap-2">
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline">Studio</span>
               </Button>
             </Link>
             <ThemeToggle />

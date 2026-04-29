@@ -3,10 +3,11 @@ import { z } from "zod";
 
 const inputSchema = z.object({
   transcription: z.string().min(1).max(2000),
+  workZone: z.string().trim().max(200).optional(),
 });
 
 export const generateQuote = createServerFn({ method: "POST" })
-  .inputValidator((input: { transcription: string }) => inputSchema.parse(input))
+  .inputValidator((input: { transcription: string; workZone?: string }) => inputSchema.parse(input))
   .handler(async ({ data }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
@@ -115,7 +116,9 @@ OUTPUT: solo JSON valido conforme allo schema della tool. Nessun testo extra.`,
           },
           {
             role: "user",
-            content: data.transcription,
+            content: data.workZone
+              ? `Zona di lavoro dello studio (usa per i benchmark €/mq): ${data.workZone}\n\nRichiesta cliente:\n${data.transcription}`
+              : data.transcription,
           },
         ],
         tools: [

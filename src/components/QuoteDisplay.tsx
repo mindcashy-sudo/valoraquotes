@@ -1,6 +1,16 @@
-import { Copy, Printer, Check, FileText } from "lucide-react";
+import { Copy, Download, Check, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { generateQuotePdf } from "@/server/pdf.functions";
 
 export interface QuoteItem {
   name: string;
@@ -37,6 +47,10 @@ function getSectionNumber(index: number): string {
 
 export function QuoteDisplay({ quote }: QuoteDisplayProps) {
   const [copied, setCopied] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [projectAddress, setProjectAddress] = useState("");
 
   const quoteText = [
     quote.title.toUpperCase(),
@@ -68,7 +82,37 @@ export function QuoteDisplay({ quote }: QuoteDisplayProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handlePrint = () => window.print();
+  const handleDownloadPdf = async () => {
+    setPdfLoading(true);
+    try {
+      const res = await generateQuotePdf({
+        data: {
+          quote,
+          clientName: clientName.trim() || undefined,
+          projectAddress: projectAddress.trim() || undefined,
+        },
+      });
+      // base64 → blob
+      const binary = atob(res.pdf);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = res.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setPdfOpen(false);
+    } catch (e) {
+      console.error(e);
+      alert("Errore generazione PDF");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -192,11 +236,57 @@ export function QuoteDisplay({ quote }: QuoteDisplayProps) {
           {copied ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
           {copied ? "Copiato" : "Copia testo"}
         </Button>
-        <Button variant="outline" onClick={handlePrint} className="flex-1 h-11 rounded-xl">
-          <Printer className="w-4 h-4 mr-2" />
-          Stampa / PDF
+        <Button onClick={() => setPdfOpen(true)} className="flex-1 h-11 rounded-xl">
+          <Download className="w-4 h-4 mr-2" />
+          Scarica PDF
         </Button>
       </div>
+
+      <Dialog open={pdfOpen} onOpenChange={setPdfOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Scarica preventivo PDF</DialogTitle>
+            <DialogDescription>
+              Inserisci i dati del cliente per il PDF brandizzato. Lasciali vuoti per un PDF generico.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Nome cliente
+              </label>
+              <Input
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder="Mario Rossi"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Indirizzo cantiere (opzionale)
+              </label>
+              <Input
+                value={projectAddress}
+                onChange={(e) => setProjectAddress(e.target.value)}
+                placeholder="Via Roma 12, Milano"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPdfOpen(false)}>
+              Annulla
+            </Button>
+            <Button onClick={handleDownloadPdf} disabled={pdfLoading}>
+              {pdfLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              Genera PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
