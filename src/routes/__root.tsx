@@ -69,6 +69,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  if (typeof document !== "undefined") {
+    document.documentElement.classList.remove("dark");
+    try {
+      localStorage.removeItem("valora_theme");
+    } catch {
+      // ignore
+    }
+  }
   return (
     <AuthProvider>
       <Outlet />
