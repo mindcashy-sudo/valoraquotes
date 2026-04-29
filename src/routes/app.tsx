@@ -43,6 +43,7 @@ function AppPage() {
   const [limit, setLimit] = useState(3);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [syncingPayment, setSyncingPayment] = useState(false);
+  const [workZone, setWorkZone] = useState<string | null>(null);
 
   // Auth guard
   useEffect(() => {
