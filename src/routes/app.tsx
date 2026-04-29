@@ -137,7 +137,10 @@ function AppPage() {
 
     try {
       const result = await generateQuote({
-        data: { transcription: transcription.trim().slice(0, 2000) },
+        data: {
+          transcription: transcription.trim().slice(0, 2000),
+          ...(workZone ? { workZone } : {}),
+        },
       });
       if ("error" in result && result.error) {
         setError(result.error);
