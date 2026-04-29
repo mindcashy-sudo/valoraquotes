@@ -116,7 +116,9 @@ OUTPUT: solo JSON valido conforme allo schema della tool. Nessun testo extra.`,
           },
           {
             role: "user",
-            content: data.transcription,
+            content: data.workZone
+              ? `Zona di lavoro dello studio (usa per i benchmark €/mq): ${data.workZone}\n\nRichiesta cliente:\n${data.transcription}`
+              : data.transcription,
           },
         ],
         tools: [
