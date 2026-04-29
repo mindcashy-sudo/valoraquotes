@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut } from "lucide-react";
+import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings } from "lucide-react";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
 import { QuoteEditor } from "@/components/QuoteEditor";
@@ -8,6 +8,7 @@ import { Paywall } from "@/components/Paywall";
 import { generateQuote } from "@/server/generate-quote.functions";
 import { getQuoteStatus, saveQuoteFn, migrateLocalQuotes } from "@/server/quotes.functions";
 import { syncCheckoutSession, syncCurrentStripeSubscription } from "@/server/stripe.functions";
+import { getStudioProfile } from "@/server/studio.functions";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/lib/auth-context";
