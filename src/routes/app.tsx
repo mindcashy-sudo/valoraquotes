@@ -55,6 +55,15 @@ function AppPage() {
     if (!user) return;
     const run = async () => {
       try {
+        // Check studio profile / onboarding
+        const studioRes = await getStudioProfile();
+        const studio = studioRes.profile;
+        if (!studio || !studio.onboarding_completed) {
+          navigate({ to: "/onboarding" });
+          return;
+        }
+        setWorkZone(studio.default_work_zone ?? null);
+
         const local = getSavedQuotes();
         const migratedKey = `valora_migrated_${user.id}`;
         if (local.length > 0 && !localStorage.getItem(migratedKey)) {
