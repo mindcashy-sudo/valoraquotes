@@ -119,7 +119,7 @@ function AppPage() {
       }
     };
     run();
-  }, [user]);
+  }, [user, navigate]);
 
   const handleTranscription = (text: string) => {
     setTranscription(text);
