@@ -164,7 +164,7 @@ OUTPUT: solo JSON valido conforme allo schema della tool. Nessun testo extra.`,
                               },
                               price: {
                                 type: "number",
-                                description: "Prezzo in EUR — MAI cifre tonde, usare valori realistici con variazione naturale (es. 4.850, 10.280, 7.350)",
+                                description: "Prezzo in EUR — SOLO valori arrotondati professionali (es. 300, 800, 1.200, 3.500, 6.500, 12.000). VIETATI valori tipo 4.857 o 2,15. Coerente con benchmark di mercato italiano (€/mq, €/cad).",
                               },
                             },
                             required: ["name", "price"],
