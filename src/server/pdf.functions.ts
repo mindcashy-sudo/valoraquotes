@@ -42,20 +42,22 @@ interface StudioRow {
   default_terms: string | null;
 }
 
-// === Layout constants ===
-const PAGE_W = 595.28; // A4
+// === Layout (A4 in points) ===
+const PAGE_W = 595.28;
 const PAGE_H = 841.89;
-const MARGIN_X = 50;
-const MARGIN_TOP = 50;
-const MARGIN_BOTTOM = 60;
+const MX = 50; // horizontal margin
+const MT = 50; // top margin
+const MB = 70; // bottom margin (room for footer)
+const CONTENT_W = PAGE_W - 2 * MX;
 
 // Brand colors
 const NAVY = rgb(0.06, 0.11, 0.2);
 const GREEN = rgb(0.18, 0.6, 0.34);
-const TEXT = rgb(0.1, 0.1, 0.12);
-const MUTED = rgb(0.45, 0.45, 0.5);
-const LIGHT = rgb(0.88, 0.88, 0.9);
-const VERY_LIGHT = rgb(0.96, 0.96, 0.97);
+const TEXT = rgb(0.13, 0.13, 0.16);
+const MUTED = rgb(0.45, 0.47, 0.52);
+const LIGHT = rgb(0.88, 0.89, 0.92);
+const VERY_LIGHT = rgb(0.965, 0.97, 0.975);
+const WHITE = rgb(1, 1, 1);
 
 const fmtPrice = (n: number) =>
   n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -63,26 +65,44 @@ const fmtPrice = (n: number) =>
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
-  if (!text) return [""];
-  const lines: string[] = [];
-  const paragraphs = text.split("\n");
-  for (const para of paragraphs) {
-    const words = para.split(" ");
+// ASCII-safe text — Helvetica (WinAnsi) lacks many unicode glyphs.
+// Replace common typographic chars and strip everything else outside the safe range.
+function sanitize(input: string | null | undefined): string {
+  if (!input) return "";
+  return input
+    .replace(/\u00A0/g, " ")
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+    .replace(/[\u2013\u2014\u2212]/g, "-")
+    .replace(/\u2026/g, "...")
+    .replace(/\u2022/g, "-")
+    .replace(/\u20AC/g, "EUR ")
+    .replace(/[^\x09\x0A\x0D\x20-\x7E\u00A1-\u00FF]/g, "");
+}
+
+function wrap(text: string, font: PDFFont, size: number, maxW: number): string[] {
+  const safe = sanitize(text);
+  if (!safe) return [];
+  const out: string[] = [];
+  for (const para of safe.split("\n")) {
+    if (!para.trim()) {
+      out.push("");
+      continue;
+    }
+    const words = para.split(/\s+/);
     let line = "";
     for (const word of words) {
       const test = line ? `${line} ${word}` : word;
-      if (font.widthOfTextAtSize(test, size) > maxWidth && line) {
-        lines.push(line);
+      if (font.widthOfTextAtSize(test, size) > maxW && line) {
+        out.push(line);
         line = word;
       } else {
         line = test;
       }
     }
-    if (line) lines.push(line);
-    if (paragraphs.length > 1) lines.push("");
+    if (line) out.push(line);
   }
-  return lines;
+  return out;
 }
 
 interface Ctx {
@@ -90,26 +110,42 @@ interface Ctx {
   page: PDFPage;
   y: number;
   font: PDFFont;
-  fontBold: PDFFont;
+  bold: PDFFont;
   studio: StudioRow;
 }
 
-function newPage(ctx: Ctx) {
-  ctx.page = ctx.pdf.addPage([PAGE_W, PAGE_H]);
-  ctx.y = PAGE_H - MARGIN_TOP;
-  drawFooter(ctx);
+function drawText(
+  page: PDFPage,
+  text: string,
+  x: number,
+  y: number,
+  size: number,
+  font: PDFFont,
+  color = TEXT
+) {
+  page.drawText(sanitize(text), { x, y, size, font, color });
 }
 
-function ensureSpace(ctx: Ctx, needed: number) {
-  if (ctx.y - needed < MARGIN_BOTTOM) newPage(ctx);
+function drawTextRight(
+  page: PDFPage,
+  text: string,
+  rightX: number,
+  y: number,
+  size: number,
+  font: PDFFont,
+  color = TEXT
+) {
+  const safe = sanitize(text);
+  const w = font.widthOfTextAtSize(safe, size);
+  page.drawText(safe, { x: rightX - w, y, size, font, color });
 }
 
-function drawFooter(ctx: Ctx) {
+function drawFooter(ctx: Ctx, pageNum: number, pageTotal: number) {
   const { page, font, studio } = ctx;
-  const footerY = 30;
+  const y = 38;
   page.drawLine({
-    start: { x: MARGIN_X, y: footerY + 18 },
-    end: { x: PAGE_W - MARGIN_X, y: footerY + 18 },
+    start: { x: MX, y: y + 14 },
+    end: { x: PAGE_W - MX, y: y + 14 },
     thickness: 0.5,
     color: LIGHT,
   });
@@ -118,21 +154,28 @@ function drawFooter(ctx: Ctx) {
     studio.vat_number ? `P.IVA ${studio.vat_number}` : null,
     studio.email,
     studio.phone,
-  ].filter(Boolean);
-  page.drawText(parts.join(" · "), {
-    x: MARGIN_X,
-    y: footerY,
-    size: 7,
+  ]
+    .filter(Boolean)
+    .join("  -  ");
+  drawText(page, parts, MX, y, 7.5, font, MUTED);
+  drawTextRight(
+    page,
+    `Pagina ${pageNum} di ${pageTotal}`,
+    PAGE_W - MX,
+    y,
+    7.5,
     font,
-    color: MUTED,
-  });
-  page.drawText("Documento generato con Valora", {
-    x: PAGE_W - MARGIN_X - font.widthOfTextAtSize("Documento generato con Valora", 7),
-    y: footerY,
-    size: 7,
-    font,
-    color: MUTED,
-  });
+    MUTED
+  );
+}
+
+function newPage(ctx: Ctx) {
+  ctx.page = ctx.pdf.addPage([PAGE_W, PAGE_H]);
+  ctx.y = PAGE_H - MT;
+}
+
+function ensure(ctx: Ctx, needed: number) {
+  if (ctx.y - needed < MB) newPage(ctx);
 }
 
 async function drawHeader(
@@ -140,10 +183,11 @@ async function drawHeader(
   logoBytes: Uint8Array | null,
   logoMime: string | null
 ) {
-  const { page, font, fontBold, studio } = ctx;
-  const top = PAGE_H - MARGIN_TOP;
+  const { page, font, bold, studio } = ctx;
+  const top = PAGE_H - MT;
 
-  // Logo
+  // Left side: logo
+  let leftBottom = top;
   if (logoBytes && logoMime) {
     try {
       let img;
@@ -151,53 +195,67 @@ async function drawHeader(
       else if (logoMime.includes("jpeg") || logoMime.includes("jpg"))
         img = await ctx.pdf.embedJpg(logoBytes);
       if (img) {
-        const maxH = 50;
+        const maxH = 55;
+        const maxW = 180;
         const ratio = img.width / img.height;
-        const h = Math.min(maxH, img.height);
-        const w = h * ratio;
-        page.drawImage(img, {
-          x: MARGIN_X,
-          y: top - h,
-          width: Math.min(w, 160),
-          height: h,
-        });
+        let h = maxH;
+        let w = h * ratio;
+        if (w > maxW) {
+          w = maxW;
+          h = w / ratio;
+        }
+        page.drawImage(img, { x: MX, y: top - h, width: w, height: h });
+        leftBottom = top - h;
       }
     } catch {
-      // ignore logo errors
+      // ignore
+    }
+  }
+  // Studio name fallback if no logo
+  if (leftBottom === top && studio.studio_name) {
+    drawText(page, studio.studio_name, MX, top - 14, 14, bold, NAVY);
+    leftBottom = top - 18;
+    if (studio.architect_name) {
+      drawText(page, studio.architect_name, MX, top - 30, 9, font, MUTED);
+      leftBottom = top - 34;
     }
   }
 
-  // Studio info on the right
-  let yR = top;
+  // Right side: studio info stack
+  let yR = top - 4;
+  const lineH = (size: number) => size + 3;
   const drawR = (text: string, size: number, f: PDFFont, color = TEXT) => {
     if (!text) return;
-    const w = f.widthOfTextAtSize(text, size);
-    page.drawText(text, { x: PAGE_W - MARGIN_X - w, y: yR, size, font: f, color });
-    yR -= size + 2;
+    drawTextRight(page, text, PAGE_W - MX, yR, size, f, color);
+    yR -= lineH(size);
   };
-  drawR(studio.studio_name ?? "", 11, fontBold, NAVY);
-  drawR(studio.architect_name ?? "", 9, font, MUTED);
-  if (studio.address) {
-    const cityLine = [studio.postal_code, studio.city, studio.province ? `(${studio.province})` : null]
-      .filter(Boolean)
-      .join(" ");
-    drawR(studio.address, 8, font, MUTED);
-    if (cityLine) drawR(cityLine, 8, font, MUTED);
+  if (logoBytes) {
+    // Show studio name on the right when logo is on the left
+    drawR(studio.studio_name ?? "", 11, bold, NAVY);
   }
-  if (studio.phone) drawR(`Tel ${studio.phone}`, 8, font, MUTED);
-  if (studio.email) drawR(studio.email, 8, font, MUTED);
-  if (studio.vat_number) drawR(`P.IVA ${studio.vat_number}`, 8, font, MUTED);
-  if (studio.albo_number) drawR(`Albo n° ${studio.albo_number}`, 8, font, MUTED);
+  drawR(studio.architect_name ?? "", 9, font, MUTED);
+  if (studio.address) drawR(studio.address, 8.5, font, MUTED);
+  const cityLine = [studio.postal_code, studio.city, studio.province ? `(${studio.province})` : null]
+    .filter(Boolean)
+    .join(" ");
+  if (cityLine) drawR(cityLine, 8.5, font, MUTED);
+  if (studio.phone) drawR(`Tel. ${studio.phone}`, 8.5, font, MUTED);
+  if (studio.email) drawR(studio.email, 8.5, font, MUTED);
+  if (studio.vat_number) drawR(`P.IVA ${studio.vat_number}`, 8.5, font, MUTED);
+  if (studio.albo_number) drawR(`Albo n. ${studio.albo_number}`, 8.5, font, MUTED);
 
-  ctx.y = Math.min(top - 70, yR - 20);
+  // Set y below the lower of the two sides, with safe gap
+  const lowest = Math.min(leftBottom, yR);
+  ctx.y = lowest - 18;
+
   // Divider
   page.drawLine({
-    start: { x: MARGIN_X, y: ctx.y },
-    end: { x: PAGE_W - MARGIN_X, y: ctx.y },
+    start: { x: MX, y: ctx.y },
+    end: { x: PAGE_W - MX, y: ctx.y },
     thickness: 0.8,
     color: NAVY,
   });
-  ctx.y -= 20;
+  ctx.y -= 24;
 }
 
 function drawClientBlock(
@@ -210,318 +268,247 @@ function drawClientBlock(
     projectAddress?: string;
   }
 ) {
-  const { page, font, fontBold } = ctx;
-  ensureSpace(ctx, 100);
+  const { page, font, bold } = ctx;
+  // Block height ~ 70pt
+  ensure(ctx, 80);
+  const blockTop = ctx.y;
 
-  // Left: client
-  page.drawText("Spett.le", { x: MARGIN_X, y: ctx.y, size: 8, font, color: MUTED });
-  page.drawText(opts.clientName, {
-    x: MARGIN_X,
-    y: ctx.y - 14,
-    size: 12,
-    font: fontBold,
-    color: TEXT,
-  });
+  // LEFT — client
+  drawText(page, "SPETT.LE", MX, blockTop, 7.5, bold, MUTED);
+  drawText(page, opts.clientName, MX, blockTop - 16, 13, bold, NAVY);
   if (opts.projectAddress) {
-    page.drawText(opts.projectAddress, {
-      x: MARGIN_X,
-      y: ctx.y - 30,
-      size: 9,
-      font,
-      color: MUTED,
-    });
+    const lines = wrap(`Cantiere: ${opts.projectAddress}`, font, 9, CONTENT_W / 2 - 10);
+    let ly = blockTop - 32;
+    for (const line of lines.slice(0, 2)) {
+      drawText(page, line, MX, ly, 9, font, MUTED);
+      ly -= 12;
+    }
   }
 
-  // Right: meta
-  const rightX = PAGE_W - MARGIN_X - 200;
+  // RIGHT — meta box
+  const boxW = 200;
+  const boxX = PAGE_W - MX - boxW;
   const rows: [string, string][] = [
-    ["Preventivo n°", opts.quoteNumber],
-    ["Data", fmtDate(opts.quoteDate)],
-    ["Validità offerta", fmtDate(opts.validUntil)],
+    ["Preventivo n.", opts.quoteNumber],
+    ["Data emissione", fmtDate(opts.quoteDate)],
+    ["Validita' offerta", fmtDate(opts.validUntil)],
   ];
-  let ry = ctx.y;
+  let ry = blockTop;
   for (const [k, v] of rows) {
-    page.drawText(k, { x: rightX, y: ry, size: 8, font, color: MUTED });
-    page.drawText(v, {
-      x: PAGE_W - MARGIN_X - fontBold.widthOfTextAtSize(v, 9),
-      y: ry,
-      size: 9,
-      font: fontBold,
-      color: TEXT,
-    });
-    ry -= 14;
+    drawText(page, k, boxX, ry, 8, font, MUTED);
+    drawTextRight(page, v, PAGE_W - MX, ry, 9, bold, TEXT);
+    ry -= 16;
   }
 
-  ctx.y -= 60;
+  ctx.y = blockTop - 70;
 }
 
 function drawTitleBlock(ctx: Ctx, q: QuoteContent) {
-  const { page, font, fontBold } = ctx;
-  const innerW = PAGE_W - 2 * MARGIN_X;
-  const titleLines = wrapText(q.title, fontBold, 14, innerW);
-  ensureSpace(ctx, 30 + titleLines.length * 18);
+  const { page, font, bold } = ctx;
 
-  // Background band
-  const bandH = 18 + titleLines.length * 18 + 12;
+  // Title with green accent bar
+  const titleLines = wrap(q.title, bold, 13, CONTENT_W - 16);
+  const titleH = titleLines.length * 17;
+  ensure(ctx, titleH + 16);
+
   page.drawRectangle({
-    x: MARGIN_X,
-    y: ctx.y - bandH + 14,
-    width: innerW,
-    height: bandH,
-    color: VERY_LIGHT,
-  });
-  page.drawRectangle({
-    x: MARGIN_X,
-    y: ctx.y - bandH + 14,
+    x: MX,
+    y: ctx.y - titleH - 4,
     width: 3,
-    height: bandH,
+    height: titleH + 8,
     color: GREEN,
   });
-
-  ctx.y -= 4;
+  let ty = ctx.y - 12;
   for (const line of titleLines) {
-    page.drawText(line, { x: MARGIN_X + 12, y: ctx.y, size: 14, font: fontBold, color: NAVY });
-    ctx.y -= 18;
+    drawText(page, line, MX + 12, ty, 13, bold, NAVY);
+    ty -= 17;
   }
-  ctx.y -= 8;
+  ctx.y -= titleH + 14;
 
   // Description
-  const descLines = wrapText(q.description, font, 9, innerW - 12);
-  ensureSpace(ctx, descLines.length * 12);
-  for (const line of descLines) {
-    page.drawText(line, { x: MARGIN_X + 12, y: ctx.y, size: 9, font, color: MUTED });
-    ctx.y -= 12;
+  if (q.description) {
+    const descLines = wrap(q.description, font, 9.5, CONTENT_W);
+    ensure(ctx, descLines.length * 13 + 6);
+    for (const line of descLines) {
+      drawText(page, line, MX, ctx.y, 9.5, font, MUTED);
+      ctx.y -= 13;
+    }
+    ctx.y -= 8;
   }
-  ctx.y -= 14;
 
-  // Meta row: durata + finiture
-  const metaY = ctx.y;
-  page.drawText("DURATA", { x: MARGIN_X, y: metaY, size: 7, font: fontBold, color: MUTED });
-  page.drawText(q.duration, {
-    x: MARGIN_X,
-    y: metaY - 12,
-    size: 9,
-    font,
-    color: TEXT,
-  });
-  page.drawText("LIVELLO FINITURE", {
-    x: MARGIN_X + 200,
-    y: metaY,
-    size: 7,
-    font: fontBold,
-    color: MUTED,
-  });
-  page.drawText(q.finishLevel, {
-    x: MARGIN_X + 200,
-    y: metaY - 12,
-    size: 9,
-    font,
-    color: TEXT,
-  });
-  ctx.y -= 30;
+  // Meta row
+  ensure(ctx, 32);
+  const colW = CONTENT_W / 2;
+  drawText(page, "DURATA STIMATA", MX, ctx.y, 7, bold, MUTED);
+  drawText(page, q.duration, MX, ctx.y - 13, 10, font, TEXT);
+  drawText(page, "LIVELLO FINITURE", MX + colW, ctx.y, 7, bold, MUTED);
+  drawText(page, q.finishLevel, MX + colW, ctx.y - 13, 10, font, TEXT);
+  ctx.y -= 36;
 }
 
 function drawSections(ctx: Ctx, q: QuoteContent) {
-  const { page, font, fontBold } = ctx;
-  const innerW = PAGE_W - 2 * MARGIN_X;
-
   q.sections.forEach((section, si) => {
-    ensureSpace(ctx, 50);
-    // Section header
+    const { page, font, bold } = ctx;
+    ensure(ctx, 50);
+
+    // Section header band
+    page.drawRectangle({
+      x: MX,
+      y: ctx.y - 18,
+      width: CONTENT_W,
+      height: 22,
+      color: VERY_LIGHT,
+    });
     const num = String(si + 1).padStart(2, "0");
-    page.drawText(num, {
-      x: MARGIN_X,
-      y: ctx.y,
-      size: 9,
-      font: fontBold,
-      color: GREEN,
-    });
-    page.drawText(section.name.toUpperCase(), {
-      x: MARGIN_X + 24,
-      y: ctx.y,
-      size: 9,
-      font: fontBold,
-      color: NAVY,
-    });
-    page.drawLine({
-      start: { x: MARGIN_X, y: ctx.y - 4 },
-      end: { x: PAGE_W - MARGIN_X, y: ctx.y - 4 },
-      thickness: 0.5,
-      color: LIGHT,
-    });
-    ctx.y -= 18;
+    drawText(page, num, MX + 10, ctx.y - 12, 10, bold, GREEN);
+    drawText(page, section.name.toUpperCase(), MX + 32, ctx.y - 12, 9.5, bold, NAVY);
+    ctx.y -= 30;
 
     // Items
     for (const item of section.items) {
-      const priceStr = `€ ${fmtPrice(item.price)}`;
-      const priceW = fontBold.widthOfTextAtSize(priceStr, 9);
-      const nameMaxW = innerW - priceW - 30;
-      const nameLines = wrapText(item.name, font, 9, nameMaxW);
-      ensureSpace(ctx, nameLines.length * 12 + 4);
-      let firstLine = true;
+      const priceStr = `EUR ${fmtPrice(item.price)}`;
+      const priceW = bold.widthOfTextAtSize(priceStr, 9.5);
+      const nameMaxW = CONTENT_W - priceW - 30;
+      const nameLines = wrap(item.name, font, 9.5, nameMaxW);
+      const itemH = Math.max(nameLines.length * 13, 13) + 4;
+      ensure(ctx, itemH);
+
+      let ly = ctx.y;
+      let first = true;
       for (const line of nameLines) {
-        page.drawText(line, {
-          x: MARGIN_X + 12,
-          y: ctx.y,
-          size: 9,
-          font,
-          color: TEXT,
-        });
-        if (firstLine) {
-          page.drawText(priceStr, {
-            x: PAGE_W - MARGIN_X - priceW,
-            y: ctx.y,
-            size: 9,
-            font: fontBold,
-            color: TEXT,
-          });
-          firstLine = false;
+        drawText(page, line, MX + 10, ly, 9.5, font, TEXT);
+        if (first) {
+          drawTextRight(page, priceStr, PAGE_W - MX - 4, ly, 9.5, bold, TEXT);
+          first = false;
         }
-        ctx.y -= 12;
+        ly -= 13;
       }
-      ctx.y -= 2;
+      // Light separator
+      page.drawLine({
+        start: { x: MX + 10, y: ly + 6 },
+        end: { x: PAGE_W - MX - 4, y: ly + 6 },
+        thickness: 0.3,
+        color: LIGHT,
+      });
+      ctx.y = ly - 2;
     }
 
     // Subtotal
-    ensureSpace(ctx, 24);
+    ensure(ctx, 22);
     ctx.y -= 4;
-    const subStr = `€ ${fmtPrice(section.subtotal)}`;
-    page.drawText("Subtotale sezione", {
-      x: MARGIN_X + 12,
-      y: ctx.y,
-      size: 8,
-      font,
-      color: MUTED,
-    });
-    const subW = fontBold.widthOfTextAtSize(subStr, 10);
-    page.drawText(subStr, {
-      x: PAGE_W - MARGIN_X - subW,
-      y: ctx.y,
-      size: 10,
-      font: fontBold,
-      color: TEXT,
-    });
+    drawText(page, "Subtotale sezione", MX + 10, ctx.y, 8.5, font, MUTED);
+    drawTextRight(
+      page,
+      `EUR ${fmtPrice(section.subtotal)}`,
+      PAGE_W - MX - 4,
+      ctx.y,
+      10,
+      bold,
+      NAVY
+    );
     ctx.y -= 22;
   });
 }
 
 function drawTotals(ctx: Ctx, q: QuoteContent, vatPercent: number) {
-  const { page, font, fontBold } = ctx;
-  ensureSpace(ctx, 90);
-
+  const { page, font, bold } = ctx;
   const imponibile = q.total;
   const iva = imponibile * (vatPercent / 100);
   const totale = imponibile + iva;
 
-  const boxW = 240;
-  const boxX = PAGE_W - MARGIN_X - boxW;
-  const boxH = 80;
+  const boxW = 260;
+  const boxH = 92;
+  ensure(ctx, boxH + 10);
+
+  const boxX = PAGE_W - MX - boxW;
+  const boxY = ctx.y - boxH;
+
   page.drawRectangle({
     x: boxX,
-    y: ctx.y - boxH,
+    y: boxY,
     width: boxW,
     height: boxH,
     color: NAVY,
   });
 
-  const drawRow = (label: string, value: string, y: number, big = false) => {
-    page.drawText(label, {
-      x: boxX + 14,
-      y,
-      size: big ? 10 : 8,
-      font: big ? fontBold : font,
-      color: rgb(0.85, 0.88, 0.92),
-    });
-    const w = fontBold.widthOfTextAtSize(value, big ? 14 : 9);
-    page.drawText(value, {
-      x: boxX + boxW - 14 - w,
-      y: big ? y - 2 : y,
-      size: big ? 14 : 9,
-      font: fontBold,
-      color: big ? GREEN : rgb(1, 1, 1),
-    });
+  // Rows
+  const rowL = (label: string, value: string, yy: number) => {
+    drawText(page, label, boxX + 16, yy, 9, font, rgb(0.78, 0.82, 0.88));
+    drawTextRight(page, value, boxX + boxW - 16, yy, 10, bold, WHITE);
   };
+  rowL("Imponibile", `EUR ${fmtPrice(imponibile)}`, boxY + boxH - 20);
+  rowL(`IVA ${vatPercent}%`, `EUR ${fmtPrice(iva)}`, boxY + boxH - 38);
 
-  drawRow("Imponibile", `€ ${fmtPrice(imponibile)}`, ctx.y - 18);
-  drawRow(`IVA ${vatPercent}%`, `€ ${fmtPrice(iva)}`, ctx.y - 36);
   page.drawLine({
-    start: { x: boxX + 14, y: ctx.y - 46 },
-    end: { x: boxX + boxW - 14, y: ctx.y - 46 },
+    start: { x: boxX + 16, y: boxY + boxH - 48 },
+    end: { x: boxX + boxW - 16, y: boxY + boxH - 48 },
     thickness: 0.5,
-    color: rgb(0.3, 0.35, 0.45),
+    color: rgb(0.32, 0.38, 0.5),
   });
-  drawRow("TOTALE", `€ ${fmtPrice(totale)}`, ctx.y - 64, true);
-  ctx.y -= boxH + 20;
+
+  drawText(page, "TOTALE", boxX + 16, boxY + 18, 11, bold, WHITE);
+  drawTextRight(
+    page,
+    `EUR ${fmtPrice(totale)}`,
+    boxX + boxW - 16,
+    boxY + 14,
+    16,
+    bold,
+    GREEN
+  );
+
+  ctx.y = boxY - 22;
 }
 
 function drawNotesAndTerms(ctx: Ctx, q: QuoteContent, terms: string | null) {
-  const { page, font, fontBold } = ctx;
-  const innerW = PAGE_W - 2 * MARGIN_X;
+  const { page, font, bold } = ctx;
 
   if (q.notes && q.notes.length > 0) {
-    ensureSpace(ctx, 30);
-    page.drawText("NOTE E CONDIZIONI", {
-      x: MARGIN_X,
-      y: ctx.y,
-      size: 8,
-      font: fontBold,
-      color: NAVY,
-    });
+    ensure(ctx, 24);
+    drawText(page, "NOTE", MX, ctx.y, 8.5, bold, NAVY);
     ctx.y -= 14;
     q.notes.forEach((note, i) => {
-      const lines = wrapText(`${i + 1}. ${note}`, font, 8, innerW);
-      ensureSpace(ctx, lines.length * 11 + 4);
+      const lines = wrap(`${i + 1}. ${note}`, font, 8.5, CONTENT_W);
+      ensure(ctx, lines.length * 12 + 4);
       for (const line of lines) {
-        page.drawText(line, { x: MARGIN_X, y: ctx.y, size: 8, font, color: MUTED });
-        ctx.y -= 11;
+        drawText(page, line, MX, ctx.y, 8.5, font, MUTED);
+        ctx.y -= 12;
       }
-      ctx.y -= 2;
+      ctx.y -= 3;
     });
     ctx.y -= 10;
   }
 
   if (terms && terms.trim()) {
-    ensureSpace(ctx, 40);
-    page.drawText("CONDIZIONI CONTRATTUALI", {
-      x: MARGIN_X,
-      y: ctx.y,
-      size: 8,
-      font: fontBold,
-      color: NAVY,
-    });
+    ensure(ctx, 30);
+    drawText(page, "CONDIZIONI CONTRATTUALI", MX, ctx.y, 8.5, bold, NAVY);
     ctx.y -= 14;
-    const lines = wrapText(terms, font, 8, innerW);
+    const lines = wrap(terms, font, 8.5, CONTENT_W);
     for (const line of lines) {
-      ensureSpace(ctx, 11);
-      page.drawText(line, { x: MARGIN_X, y: ctx.y, size: 8, font, color: MUTED });
-      ctx.y -= 11;
+      ensure(ctx, 12);
+      drawText(page, line, MX, ctx.y, 8.5, font, MUTED);
+      ctx.y -= 12;
     }
     ctx.y -= 10;
   }
 }
 
 function drawSignature(ctx: Ctx) {
-  const { page, font, fontBold } = ctx;
-  ensureSpace(ctx, 80);
-  ctx.y -= 10;
-  const colW = (PAGE_W - 2 * MARGIN_X - 30) / 2;
+  const { page, font, bold } = ctx;
+  ensure(ctx, 70);
+  ctx.y -= 8;
+  const colW = (CONTENT_W - 40) / 2;
   const drawBox = (x: number, label: string) => {
     page.drawLine({
-      start: { x, y: ctx.y - 30 },
-      end: { x: x + colW, y: ctx.y - 30 },
-      thickness: 0.5,
+      start: { x, y: ctx.y - 28 },
+      end: { x: x + colW, y: ctx.y - 28 },
+      thickness: 0.6,
       color: TEXT,
     });
-    page.drawText(label, {
-      x,
-      y: ctx.y - 42,
-      size: 7,
-      font: fontBold,
-      color: MUTED,
-    });
+    drawText(page, label, x, ctx.y - 42, 7, bold, MUTED);
   };
-  drawBox(MARGIN_X, "PER ACCETTAZIONE — DATA E FIRMA DEL CLIENTE");
-  drawBox(MARGIN_X + colW + 30, "LO STUDIO");
+  drawBox(MX, "PER ACCETTAZIONE - DATA E FIRMA DEL CLIENTE");
+  drawBox(MX + colW + 40, "LO STUDIO");
   ctx.y -= 60;
 }
 
@@ -560,7 +547,6 @@ export const generateQuotePdf = createServerFn({ method: "POST" })
 
     const studio: StudioRow = (studioData ?? {}) as StudioRow;
 
-    // Fetch logo if any
     let logoBytes: Uint8Array | null = null;
     let logoMime: string | null = null;
     if (studio.logo_url) {
@@ -570,24 +556,25 @@ export const generateQuotePdf = createServerFn({ method: "POST" })
           .download(studio.logo_url);
         if (file) {
           logoBytes = new Uint8Array(await file.arrayBuffer());
-          logoMime = file.type || (studio.logo_url.endsWith(".png") ? "image/png" : "image/jpeg");
+          logoMime =
+            file.type ||
+            (studio.logo_url.endsWith(".png") ? "image/png" : "image/jpeg");
         }
       } catch {
-        // skip logo
+        // skip
       }
     }
 
     const pdf = await PDFDocument.create();
-    pdf.setTitle(data.quote.title);
+    pdf.setTitle(sanitize(data.quote.title) || "Preventivo");
     pdf.setProducer("Valora");
     pdf.setCreator("Valora");
 
     const font = await pdf.embedFont(StandardFonts.Helvetica);
-    const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+    const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
 
     const page = pdf.addPage([PAGE_W, PAGE_H]);
-    const ctx: Ctx = { pdf, page, y: PAGE_H - MARGIN_TOP, font, fontBold, studio };
-    drawFooter(ctx);
+    const ctx: Ctx = { pdf, page, y: PAGE_H - MT, font, bold, studio };
 
     await drawHeader(ctx, logoBytes, logoMime);
 
@@ -614,8 +601,14 @@ export const generateQuotePdf = createServerFn({ method: "POST" })
     drawNotesAndTerms(ctx, data.quote, studio.default_terms ?? null);
     drawSignature(ctx);
 
+    // Draw footers on every page now that we know totals
+    const total = pdf.getPageCount();
+    for (let i = 0; i < total; i++) {
+      ctx.page = pdf.getPage(i);
+      drawFooter(ctx, i + 1, total);
+    }
+
     const pdfBytes = await pdf.save();
-    // Return as base64 (server functions serialize JSON)
     let binary = "";
     const chunk = 8192;
     for (let i = 0; i < pdfBytes.length; i += chunk) {
