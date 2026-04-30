@@ -90,14 +90,23 @@ export function QuoteDisplay({ quote, defaultClientName, defaultProjectAddress }
   const handleDownloadPdf = async () => {
     setPdfLoading(true);
     try {
+      // Reserve a real progressive number from the server (per user/year)
+      let quoteNumber: string | undefined;
+      try {
+        const reserve = await reserveQuoteNumber();
+        quoteNumber = reserve.quoteNumber;
+      } catch {
+        // Non-blocking — server will fall back to a generated number
+      }
+
       const res = await generateQuotePdf({
         data: {
           quote,
           clientName: clientName.trim() || undefined,
           projectAddress: projectAddress.trim() || undefined,
+          quoteNumber,
         },
       });
-      // base64 → blob
       const binary = atob(res.pdf);
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
