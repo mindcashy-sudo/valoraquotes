@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings, Users } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings, Users, Sparkles, Lightbulb, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
@@ -22,6 +22,14 @@ import {
 import { useAuth } from "@/lib/auth-context";
 import { getSavedQuotes } from "@/lib/quote-storage";
 import valoraLogo from "@/assets/valora-logo.png";
+
+const EXAMPLE_PROMPTS = [
+  "Ristrutturazione integrale appartamento 85 mq a Milano zona Isola, due bagni, cucina abitabile, finiture fascia media, rifacimento completo impianti elettrico e idraulico.",
+  "Ristrutturazione bagno 6 mq con sostituzione sanitari, rivestimenti gres porcellanato, nuovo box doccia in cristallo, rifacimento impianti.",
+  "Recupero sottotetto 60 mq con coibentazione, nuovi tramezzi, impianti, parquet rovere e bagno cieco con ventilazione meccanica.",
+];
+
+const MIN_INPUT_CHARS = 40;
 
 export const Route = createFileRoute("/app")({
   head: () => ({
