@@ -37,6 +37,8 @@ export interface QuoteData {
 
 interface QuoteDisplayProps {
   quote: QuoteData;
+  defaultClientName?: string;
+  defaultProjectAddress?: string;
 }
 
 function formatPrice(price: number): string {
