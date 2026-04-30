@@ -75,6 +75,16 @@ function AppPage() {
         }
         setWorkZone(studio.default_work_zone ?? null);
 
+        // Load clients list (best-effort)
+        listClients().then((res) => {
+          setClients((res.clients ?? []).map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })));
+        });
+
+        // Pre-select client from query param
+        const preParams = new URLSearchParams(window.location.search);
+        const preClient = preParams.get("clientId");
+        if (preClient) setSelectedClientId(preClient);
+
         const local = getSavedQuotes();
         const migratedKey = `valora_migrated_${user.id}`;
         if (local.length > 0 && !localStorage.getItem(migratedKey)) {
@@ -187,13 +197,25 @@ function AppPage() {
 
   const handleSave = async () => {
     if (!quote) return;
-    const res = await saveQuoteFn({ data: { quote } });
+    const res = await saveQuoteFn({
+      data: {
+        quote,
+        clientId: selectedClientId || null,
+        projectAddress: projectAddress.trim() || null,
+      },
+    });
     if (res.error) {
       setError(res.error);
+      toast.error(res.error);
       return;
     }
     setSaved(true);
     setCount((c) => c + 1);
+    toast.success(
+      selectedClientId
+        ? "Preventivo salvato e collegato al cliente"
+        : "Preventivo salvato"
+    );
   };
 
   const remaining = Math.max(0, limit - count);
