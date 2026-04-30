@@ -83,7 +83,7 @@ function ClientDetailPage() {
         <div className="max-w-4xl mx-auto px-6 h-20 flex items-center justify-between">
           <Link to="/clients" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-            <img src={valoraLogo} alt="Valora" className="h-16 w-auto" />
+            <img src={valoraLogo} alt="Valora" className="h-28 w-auto" />
           </Link>
           <Link to="/app" search={{ clientId } as never}>
             <Button className="rounded-xl h-11 px-5">

@@ -59,7 +59,7 @@ function ScrollNav() {
         className="relative max-w-6xl mx-auto flex items-center justify-between px-6"
       >
         <motion.div style={{ scale: logoScale }} className="flex items-center gap-3 origin-left">
-          <img src={valoraLogo} alt="Valora" className="h-12 md:h-14 w-auto" />
+          <img src={valoraLogo} alt="Valora" className="h-28 md:h-32 w-auto" />
         </motion.div>
         <div className="flex items-center gap-3">
           <Link
