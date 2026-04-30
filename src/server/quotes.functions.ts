@@ -49,14 +49,25 @@ export const listQuotes = createServerFn({ method: "GET" })
 
 export const saveQuoteFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { quote: unknown }) =>
-    z.object({ quote: quoteSchema }).parse(input)
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        quote: quoteSchema,
+        clientId: z.string().uuid().nullable().optional(),
+        projectAddress: z.string().trim().max(300).nullable().optional(),
+      })
+      .parse(input)
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: row, error } = await supabase
       .from("quotes")
-      .insert({ user_id: userId, content: data.quote })
+      .insert({
+        user_id: userId,
+        content: data.quote,
+        client_id: data.clientId ?? null,
+        project_address: data.projectAddress ?? null,
+      })
       .select("id, content, created_at")
       .single();
     if (error) return { quote: null, error: error.message };

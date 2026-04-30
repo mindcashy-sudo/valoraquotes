@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      clients: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          email: string | null
+          fiscal_code: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+          vat_number: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          fiscal_code?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+          vat_number?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          fiscal_code?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+          vat_number?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -46,27 +91,44 @@ export type Database = {
       }
       quotes: {
         Row: {
+          client_id: string | null
           content: Json
           created_at: string
           id: string
+          project_address: string | null
+          status: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          client_id?: string | null
           content: Json
           created_at?: string
           id?: string
+          project_address?: string | null
+          status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          client_id?: string | null
           content?: Json
           created_at?: string
           id?: string
+          project_address?: string | null
+          status?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       studio_profiles: {
         Row: {

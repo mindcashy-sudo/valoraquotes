@@ -2,6 +2,7 @@ import { Copy, Download, Check, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -79,6 +80,7 @@ export function QuoteDisplay({ quote }: QuoteDisplayProps) {
   const handleCopy = async () => {
     await navigator.clipboard.writeText(quoteText);
     setCopied(true);
+    toast.success("Preventivo copiato");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -106,9 +108,10 @@ export function QuoteDisplay({ quote }: QuoteDisplayProps) {
       a.remove();
       URL.revokeObjectURL(url);
       setPdfOpen(false);
+      toast.success("PDF scaricato");
     } catch (e) {
       console.error(e);
-      alert("Errore generazione PDF");
+      toast.error("Errore generazione PDF");
     } finally {
       setPdfLoading(false);
     }

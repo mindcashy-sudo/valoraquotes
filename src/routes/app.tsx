@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings } from "lucide-react";
+import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings, Users } from "lucide-react";
+import { toast } from "sonner";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
 import { QuoteEditor } from "@/components/QuoteEditor";
@@ -9,8 +10,15 @@ import { generateQuote } from "@/server/generate-quote.functions";
 import { getQuoteStatus, saveQuoteFn, migrateLocalQuotes } from "@/server/quotes.functions";
 import { syncCheckoutSession, syncCurrentStripeSubscription } from "@/server/stripe.functions";
 import { getStudioProfile } from "@/server/studio.functions";
+import { listClients } from "@/server/clients.functions";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 import { getSavedQuotes } from "@/lib/quote-storage";
 import valoraLogo from "@/assets/valora-logo.png";
@@ -44,6 +52,9 @@ function AppPage() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [syncingPayment, setSyncingPayment] = useState(false);
   const [workZone, setWorkZone] = useState<string | null>(null);
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [projectAddress, setProjectAddress] = useState("");
 
   // Auth guard
   useEffect(() => {
@@ -63,6 +74,16 @@ function AppPage() {
           return;
         }
         setWorkZone(studio.default_work_zone ?? null);
+
+        // Load clients list (best-effort)
+        listClients().then((res) => {
+          setClients((res.clients ?? []).map((c: { id: string; name: string }) => ({ id: c.id, name: c.name })));
+        });
+
+        // Pre-select client from query param
+        const preParams = new URLSearchParams(window.location.search);
+        const preClient = preParams.get("clientId");
+        if (preClient) setSelectedClientId(preClient);
 
         const local = getSavedQuotes();
         const migratedKey = `valora_migrated_${user.id}`;
@@ -176,13 +197,25 @@ function AppPage() {
 
   const handleSave = async () => {
     if (!quote) return;
-    const res = await saveQuoteFn({ data: { quote } });
+    const res = await saveQuoteFn({
+      data: {
+        quote,
+        clientId: selectedClientId || null,
+        projectAddress: projectAddress.trim() || null,
+      },
+    });
     if (res.error) {
       setError(res.error);
+      toast.error(res.error);
       return;
     }
     setSaved(true);
     setCount((c) => c + 1);
+    toast.success(
+      selectedClientId
+        ? "Preventivo salvato e collegato al cliente"
+        : "Preventivo salvato"
+    );
   };
 
   const remaining = Math.max(0, limit - count);
@@ -201,46 +234,49 @@ function AppPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b border-border/50 px-6 py-5 md:py-6 print:hidden bg-background/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-              <img src={valoraLogo} alt="Valora" className="h-20 md:h-28 w-auto" />
+      <header className="border-b border-border/50 px-6 py-4 print:hidden bg-background/85 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+          <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity shrink-0">
+            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+            <img src={valoraLogo} alt="Valora" className="h-12 md:h-14 w-auto" />
+          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/clients">
+              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Clienti</span>
+              </Button>
             </Link>
-          </div>
-          <div className="flex items-center gap-3">
             <Link to="/saved">
-              <Button variant="ghost" size="sm" className="rounded-lg gap-2">
+              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
                 <FolderOpen className="w-4 h-4" />
                 <span className="hidden sm:inline">Salvati</span>
               </Button>
             </Link>
             <Link to="/settings">
-              <Button variant="ghost" size="sm" className="rounded-lg gap-2">
+              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
                 <Settings className="w-4 h-4" />
                 <span className="hidden sm:inline">Studio</span>
               </Button>
             </Link>
-            <ThemeToggle />
             {isSubscribed ? (
-              <span className="text-xs font-semibold text-valora-green uppercase tracking-wider px-2 py-1 rounded-md bg-valora-green/10">
+              <span className="text-[10px] font-bold text-valora-green uppercase tracking-wider px-2.5 py-1 rounded-md bg-valora-green/10 ml-1">
                 Early Access
               </span>
             ) : (
               step !== "blocked" && (
-                <div className="flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-2 ml-2">
                   <div className="flex gap-1">
                     {Array.from({ length: limit }).map((_, i) => (
                       <div
                         key={i}
-                        className={`w-2 h-2 rounded-full transition-colors ${
+                        className={`w-1.5 h-1.5 rounded-full transition-colors ${
                           i < remaining ? "bg-valora-green" : "bg-border"
                         }`}
                       />
                     ))}
                   </div>
-                  <span className="text-xs text-muted-foreground ml-1">
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
                     {remaining}/{limit}
                   </span>
                 </div>
@@ -249,6 +285,7 @@ function AppPage() {
             <Button
               variant="ghost"
               size="icon"
+              className="h-9 w-9"
               onClick={async () => {
                 await signOut();
                 navigate({ to: "/login" });
@@ -329,6 +366,48 @@ function AppPage() {
           {step === "result" && quote && (
             <div className="space-y-4">
               <QuoteDisplay quote={quote} />
+
+              {!saved && (
+                <div className="bg-card border border-border rounded-2xl p-5 space-y-3 print:hidden">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Collega a cliente (opzionale)
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <Select
+                      value={selectedClientId || "none"}
+                      onValueChange={(v) => setSelectedClientId(v === "none" ? "" : v)}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Nessun cliente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nessun cliente</SelectItem>
+                        {clients.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <input
+                      value={projectAddress}
+                      onChange={(e) => setProjectAddress(e.target.value)}
+                      placeholder="Indirizzo cantiere"
+                      className="h-11 rounded-md border border-input bg-background px-3 text-sm"
+                    />
+                  </div>
+                  {clients.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Nessun cliente in archivio.{" "}
+                      <Link to="/clients" className="underline hover:text-foreground">
+                        Aggiungine uno
+                      </Link>
+                      .
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-3 print:hidden">
                 <Button
                   variant="outline"
