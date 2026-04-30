@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Upload, X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -85,7 +86,7 @@ export function StudioProfileForm({
 
   const handleFile = async (file: File) => {
     if (file.size > 2 * 1024 * 1024) {
-      alert("Logo troppo grande (max 2MB)");
+      toast.error("Logo troppo grande (max 2MB)");
       return;
     }
     const ext = file.name.split(".").pop() ?? "png";
@@ -93,7 +94,7 @@ export function StudioProfileForm({
     try {
       const signed = await createLogoUploadUrl({ data: { ext } });
       if (signed.error || !signed.path || !signed.token) {
-        alert(signed.error ?? "Errore upload");
+        toast.error(signed.error ?? "Errore upload logo");
         return;
       }
       const { error: upErr } = await supabase.storage
@@ -103,24 +104,30 @@ export function StudioProfileForm({
           upsert: true,
         });
       if (upErr) {
-        alert(upErr.message);
+        toast.error(upErr.message);
         return;
       }
       update("logo_url", signed.path);
+      toast.success("Logo caricato");
     } finally {
       setUploadingLogo(false);
     }
   };
 
   const handleSave = async () => {
+    if (!draft.studio_name?.trim() || !draft.architect_name?.trim()) {
+      toast.error("Inserisci nome studio e nome architetto");
+      return;
+    }
     setSaving(true);
     try {
       const payload = { ...draft, onboarding_completed: true };
       const res = await upsertStudioProfile({ data: payload });
       if (res.error || !res.profile) {
-        alert(res.error ?? "Errore salvataggio");
+        toast.error(res.error ?? "Errore salvataggio");
         return;
       }
+      toast.success("Profilo studio salvato");
       onSaved(res.profile as StudioProfile);
     } finally {
       setSaving(false);
