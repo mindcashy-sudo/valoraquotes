@@ -2,6 +2,8 @@ import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/r
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 
+import appCss from "../styles.css?url";
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -79,6 +81,7 @@ function RootComponent() {
   return (
     <AuthProvider>
       <Outlet />
+      <Toaster position="top-center" richColors closeButton />
     </AuthProvider>
   );
 }
