@@ -52,6 +52,9 @@ function AppPage() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [syncingPayment, setSyncingPayment] = useState(false);
   const [workZone, setWorkZone] = useState<string | null>(null);
+  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [projectAddress, setProjectAddress] = useState("");
 
   // Auth guard
   useEffect(() => {
