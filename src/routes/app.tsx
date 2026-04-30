@@ -366,6 +366,48 @@ function AppPage() {
           {step === "result" && quote && (
             <div className="space-y-4">
               <QuoteDisplay quote={quote} />
+
+              {!saved && (
+                <div className="bg-card border border-border rounded-2xl p-5 space-y-3 print:hidden">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Collega a cliente (opzionale)
+                  </p>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <Select
+                      value={selectedClientId || "none"}
+                      onValueChange={(v) => setSelectedClientId(v === "none" ? "" : v)}
+                    >
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Nessun cliente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nessun cliente</SelectItem>
+                        {clients.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <input
+                      value={projectAddress}
+                      onChange={(e) => setProjectAddress(e.target.value)}
+                      placeholder="Indirizzo cantiere"
+                      className="h-11 rounded-md border border-input bg-background px-3 text-sm"
+                    />
+                  </div>
+                  {clients.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Nessun cliente in archivio.{" "}
+                      <Link to="/clients" className="underline hover:text-foreground">
+                        Aggiungine uno
+                      </Link>
+                      .
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="flex flex-col sm:flex-row gap-3 print:hidden">
                 <Button
                   variant="outline"
