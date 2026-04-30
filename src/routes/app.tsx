@@ -227,6 +227,10 @@ function AppPage() {
   };
 
   const remaining = Math.max(0, limit - count);
+  const selectedClientName = useMemo(
+    () => clients.find((c) => c.id === selectedClientId)?.name ?? "",
+    [clients, selectedClientId]
+  );
 
   if (authLoading || !user || statusLoading || syncingPayment) {
     return (
