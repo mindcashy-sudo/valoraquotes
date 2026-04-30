@@ -431,12 +431,13 @@ function drawSections(ctx: Ctx, q: QuoteContent) {
     });
 
     // Subtotal — strong rule + bold
-    ensure(ctx, 28);
+    ensure(ctx, 32);
     ctx.y -= 4;
     dLine(ctx, MX, ctx.y + 6, PAGE_W - MX, ctx.y + 6, 0.6, INK);
     dText(ctx, `Subtotale ${section.name}`.toUpperCase(), MX + 4, ctx.y - 6, 8, bold, MUTED);
     dTextRight(ctx, eur(section.subtotal), PAGE_W - MX - 4, ctx.y - 7, 11, bold, INK);
-    ctx.y -= 26;
+    // Breathing room between sections (last section ends naturally before totals)
+    ctx.y -= si === q.sections.length - 1 ? 28 : 36;
   });
 }
 
