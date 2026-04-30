@@ -162,9 +162,14 @@ async function drawHeader(ctx: Ctx, logoBytes: Uint8Array | null, logoMime: stri
   const { font, bold, studio } = ctx;
   const top = PAGE_H - MT;
 
-  const GUTTER = 24;
-  const leftColW = Math.floor((CONTENT_W - GUTTER) * 0.45);
-  const rightColW = CONTENT_W - GUTTER - leftColW;
+  // Strict columns. Logo lives in a fixed box on the LEFT; studio details
+  // live on the RIGHT. The two NEVER share horizontal space, so they cannot
+  // overlap regardless of logo aspect ratio.
+  const GUTTER = 28;
+  const LOGO_BOX_W = 150; // hard cap — wide logos shrink to fit, never bleed right
+  const LOGO_BOX_H = 56;
+  const rightColX = MX + LOGO_BOX_W + GUTTER;
+  const rightColW = PAGE_W - MX - rightColX;
 
   let leftBottom = top;
   let logoDrawn = false;
@@ -175,39 +180,45 @@ async function drawHeader(ctx: Ctx, logoBytes: Uint8Array | null, logoMime: stri
       else if (logoMime.includes("jpeg") || logoMime.includes("jpg"))
         img = await ctx.pdf.embedJpg(logoBytes);
       if (img) {
-        const maxH = 64;
-        const maxW = leftColW;
         const ratio = img.width / img.height;
-        let h = maxH;
+        // Fit inside LOGO_BOX_W x LOGO_BOX_H, preserving aspect ratio.
+        let h = LOGO_BOX_H;
         let w = h * ratio;
-        if (w > maxW) {
-          w = maxW;
+        if (w > LOGO_BOX_W) {
+          w = LOGO_BOX_W;
           h = w / ratio;
         }
-        ctx.page.drawImage(img, { x: MX, y: top - h, width: w, height: h });
-        leftBottom = top - h;
+        // Anchor to top-left of the box, vertically centered if shorter.
+        const yOffset = (LOGO_BOX_H - h) / 2;
+        ctx.page.drawImage(img, {
+          x: MX,
+          y: top - LOGO_BOX_H + yOffset,
+          width: w,
+          height: h,
+        });
+        leftBottom = top - LOGO_BOX_H;
         logoDrawn = true;
       }
     } catch {
-      // ignore
+      // ignore — fall back to text below
     }
   }
   if (!logoDrawn) {
-    const nameLines = wrap(studio.studio_name ?? "Studio", bold, 15, leftColW);
-    let ly = top - 13;
+    const nameLines = wrap(studio.studio_name ?? "Studio", bold, 16, LOGO_BOX_W + GUTTER);
+    let ly = top - 14;
     for (const line of nameLines.slice(0, 2)) {
-      dText(ctx, line, MX, ly, 15, bold, NAVY);
-      ly -= 18;
+      dText(ctx, line, MX, ly, 16, bold, NAVY);
+      ly -= 19;
     }
     if (studio.architect_name) {
       ly -= 2;
-      dText(ctx, studio.architect_name, MX, ly, 9, font, MUTED);
+      dText(ctx, studio.architect_name, MX, ly, 9.5, font, MUTED);
       ly -= 12;
     }
     leftBottom = ly;
   }
 
-  // RIGHT column — studio details, right-aligned
+  // RIGHT column — studio details, right-aligned, strictly inside rightColW.
   let yR = top - 2;
   const lineH = (size: number) => size + 4;
   const fit = (text: string, size: number, f: PDFFont): string => {
@@ -223,8 +234,8 @@ async function drawHeader(ctx: Ctx, logoBytes: Uint8Array | null, logoMime: stri
     dTextRight(ctx, fit(text, size, f), PAGE_W - MX, yR, size, f, color);
     yR -= lineH(size);
   };
-  if (logoDrawn) {
-    drawR(studio.studio_name ?? "", 11, bold, NAVY);
+  if (logoDrawn && studio.studio_name) {
+    drawR(studio.studio_name, 11, bold, NAVY);
   }
   if (studio.architect_name) drawR(studio.architect_name, 9, font, MUTED);
   if (studio.address) drawR(studio.address, 8.5, font, MUTED);
@@ -234,11 +245,17 @@ async function drawHeader(ctx: Ctx, logoBytes: Uint8Array | null, logoMime: stri
   if (cityLine) drawR(cityLine, 8.5, font, MUTED);
   if (studio.phone) drawR(`Tel. ${studio.phone}`, 8.5, font, MUTED);
   if (studio.email) drawR(studio.email, 8.5, font, MUTED);
+  if (studio.pec) drawR(`PEC: ${studio.pec}`, 8.5, font, MUTED);
   if (studio.vat_number) drawR(`P.IVA ${studio.vat_number}`, 8.5, font, MUTED);
+  if (studio.fiscal_code && studio.fiscal_code !== studio.vat_number) {
+    drawR(`C.F. ${studio.fiscal_code}`, 8.5, font, MUTED);
+  }
   if (studio.albo_number) drawR(`Albo n. ${studio.albo_number}`, 8.5, font, MUTED);
 
-  const lowest = Math.min(leftBottom, yR) - 8;
-  ctx.y = lowest - 14;
+  // Use the LOWER of the two columns as baseline; both have safe horizontal
+  // separation so we just need vertical clearance from the deepest content.
+  const lowest = Math.min(leftBottom, yR) - 10;
+  ctx.y = lowest - 8;
 
   dLine(ctx, MX, ctx.y, PAGE_W - MX, ctx.y, 0.8, NAVY);
   ctx.y -= 28;
