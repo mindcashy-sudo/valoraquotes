@@ -234,46 +234,49 @@ function AppPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b border-border/50 px-6 py-5 md:py-6 print:hidden bg-background/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-              <img src={valoraLogo} alt="Valora" className="h-20 md:h-28 w-auto" />
+      <header className="border-b border-border/50 px-6 py-4 print:hidden bg-background/85 backdrop-blur-xl sticky top-0 z-50">
+        <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
+          <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity shrink-0">
+            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
+            <img src={valoraLogo} alt="Valora" className="h-12 md:h-14 w-auto" />
+          </Link>
+          <div className="flex items-center gap-2">
+            <Link to="/clients">
+              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
+                <Users className="w-4 h-4" />
+                <span className="hidden sm:inline">Clienti</span>
+              </Button>
             </Link>
-          </div>
-          <div className="flex items-center gap-3">
             <Link to="/saved">
-              <Button variant="ghost" size="sm" className="rounded-lg gap-2">
+              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
                 <FolderOpen className="w-4 h-4" />
                 <span className="hidden sm:inline">Salvati</span>
               </Button>
             </Link>
             <Link to="/settings">
-              <Button variant="ghost" size="sm" className="rounded-lg gap-2">
+              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
                 <Settings className="w-4 h-4" />
                 <span className="hidden sm:inline">Studio</span>
               </Button>
             </Link>
-            <ThemeToggle />
             {isSubscribed ? (
-              <span className="text-xs font-semibold text-valora-green uppercase tracking-wider px-2 py-1 rounded-md bg-valora-green/10">
+              <span className="text-[10px] font-bold text-valora-green uppercase tracking-wider px-2.5 py-1 rounded-md bg-valora-green/10 ml-1">
                 Early Access
               </span>
             ) : (
               step !== "blocked" && (
-                <div className="flex items-center gap-2">
+                <div className="hidden md:flex items-center gap-2 ml-2">
                   <div className="flex gap-1">
                     {Array.from({ length: limit }).map((_, i) => (
                       <div
                         key={i}
-                        className={`w-2 h-2 rounded-full transition-colors ${
+                        className={`w-1.5 h-1.5 rounded-full transition-colors ${
                           i < remaining ? "bg-valora-green" : "bg-border"
                         }`}
                       />
                     ))}
                   </div>
-                  <span className="text-xs text-muted-foreground ml-1">
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
                     {remaining}/{limit}
                   </span>
                 </div>
@@ -282,6 +285,7 @@ function AppPage() {
             <Button
               variant="ghost"
               size="icon"
+              className="h-9 w-9"
               onClick={async () => {
                 await signOut();
                 navigate({ to: "/login" });
