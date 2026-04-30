@@ -89,6 +89,27 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_counters: {
+        Row: {
+          last_number: number
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          last_number?: number
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          last_number?: number
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       quotes: {
         Row: {
           client_id: string | null
@@ -96,6 +117,7 @@ export type Database = {
           created_at: string
           id: string
           project_address: string | null
+          quote_number: string | null
           status: string
           updated_at: string
           user_id: string
@@ -106,6 +128,7 @@ export type Database = {
           created_at?: string
           id?: string
           project_address?: string | null
+          quote_number?: string | null
           status?: string
           updated_at?: string
           user_id: string
@@ -116,6 +139,7 @@ export type Database = {
           created_at?: string
           id?: string
           project_address?: string | null
+          quote_number?: string | null
           status?: string
           updated_at?: string
           user_id?: string
@@ -213,7 +237,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      next_quote_number: {
+        Args: { _user_id: string; _year: number }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
