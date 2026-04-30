@@ -45,9 +45,9 @@ interface StudioRow {
 // === Layout (A4 in points) ===
 const PAGE_W = 595.28;
 const PAGE_H = 841.89;
-const MX = 50; // horizontal margin
-const MT = 50; // top margin
-const MB = 70; // bottom margin (room for footer)
+const MX = 50;
+const MT = 50;
+const MB = 70;
 const CONTENT_W = PAGE_W - 2 * MX;
 
 // Brand colors
@@ -65,8 +65,6 @@ const fmtPrice = (n: number) =>
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-// ASCII-safe text — Helvetica (WinAnsi) lacks many unicode glyphs.
-// Replace common typographic chars and strip everything else outside the safe range.
 function sanitize(input: string | null | undefined): string {
   if (!input) return "";
   return input
@@ -114,59 +112,25 @@ interface Ctx {
   studio: StudioRow;
 }
 
-function drawText(
-  page: PDFPage,
-  text: string,
-  x: number,
-  y: number,
-  size: number,
-  font: PDFFont,
-  color = TEXT
-) {
-  page.drawText(sanitize(text), { x, y, size, font, color });
+// IMPORTANT: all draw helpers below take Ctx so they always render on
+// ctx.page (which can change after a page break via newPage/ensure).
+
+function dText(ctx: Ctx, text: string, x: number, y: number, size: number, font: PDFFont, color = TEXT) {
+  ctx.page.drawText(sanitize(text), { x, y, size, font, color });
 }
 
-function drawTextRight(
-  page: PDFPage,
-  text: string,
-  rightX: number,
-  y: number,
-  size: number,
-  font: PDFFont,
-  color = TEXT
-) {
+function dTextRight(ctx: Ctx, text: string, rightX: number, y: number, size: number, font: PDFFont, color = TEXT) {
   const safe = sanitize(text);
   const w = font.widthOfTextAtSize(safe, size);
-  page.drawText(safe, { x: rightX - w, y, size, font, color });
+  ctx.page.drawText(safe, { x: rightX - w, y, size, font, color });
 }
 
-function drawFooter(ctx: Ctx, pageNum: number, pageTotal: number) {
-  const { page, font, studio } = ctx;
-  const y = 38;
-  page.drawLine({
-    start: { x: MX, y: y + 14 },
-    end: { x: PAGE_W - MX, y: y + 14 },
-    thickness: 0.5,
-    color: LIGHT,
-  });
-  const parts = [
-    studio.studio_name,
-    studio.vat_number ? `P.IVA ${studio.vat_number}` : null,
-    studio.email,
-    studio.phone,
-  ]
-    .filter(Boolean)
-    .join("  -  ");
-  drawText(page, parts, MX, y, 7.5, font, MUTED);
-  drawTextRight(
-    page,
-    `Pagina ${pageNum} di ${pageTotal}`,
-    PAGE_W - MX,
-    y,
-    7.5,
-    font,
-    MUTED
-  );
+function dRect(ctx: Ctx, x: number, y: number, width: number, height: number, color: ReturnType<typeof rgb>) {
+  ctx.page.drawRectangle({ x, y, width, height, color });
+}
+
+function dLine(ctx: Ctx, x1: number, y1: number, x2: number, y2: number, thickness: number, color: ReturnType<typeof rgb>) {
+  ctx.page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color });
 }
 
 function newPage(ctx: Ctx) {
@@ -178,20 +142,30 @@ function ensure(ctx: Ctx, needed: number) {
   if (ctx.y - needed < MB) newPage(ctx);
 }
 
-async function drawHeader(
-  ctx: Ctx,
-  logoBytes: Uint8Array | null,
-  logoMime: string | null
-) {
-  const { page, font, bold, studio } = ctx;
+function drawFooter(ctx: Ctx, pageNum: number, pageTotal: number) {
+  const { font, studio } = ctx;
+  const y = 38;
+  dLine(ctx, MX, y + 14, PAGE_W - MX, y + 14, 0.5, LIGHT);
+  const parts = [
+    studio.studio_name,
+    studio.vat_number ? `P.IVA ${studio.vat_number}` : null,
+    studio.email,
+    studio.phone,
+  ]
+    .filter(Boolean)
+    .join("  -  ");
+  dText(ctx, parts, MX, y, 7.5, font, MUTED);
+  dTextRight(ctx, `Pagina ${pageNum} di ${pageTotal}`, PAGE_W - MX, y, 7.5, font, MUTED);
+}
+
+async function drawHeader(ctx: Ctx, logoBytes: Uint8Array | null, logoMime: string | null) {
+  const { font, bold, studio } = ctx;
   const top = PAGE_H - MT;
 
-  // Two clearly separated columns with a generous gutter to avoid overlap.
   const GUTTER = 24;
-  const leftColW = Math.floor((CONTENT_W - GUTTER) * 0.42);
+  const leftColW = Math.floor((CONTENT_W - GUTTER) * 0.45);
   const rightColW = CONTENT_W - GUTTER - leftColW;
 
-  // === LEFT COLUMN: logo or studio name ===
   let leftBottom = top;
   let logoDrawn = false;
   if (logoBytes && logoMime) {
@@ -201,7 +175,7 @@ async function drawHeader(
       else if (logoMime.includes("jpeg") || logoMime.includes("jpg"))
         img = await ctx.pdf.embedJpg(logoBytes);
       if (img) {
-        const maxH = 60;
+        const maxH = 64;
         const maxW = leftColW;
         const ratio = img.width / img.height;
         let h = maxH;
@@ -210,7 +184,7 @@ async function drawHeader(
           w = maxW;
           h = w / ratio;
         }
-        page.drawImage(img, { x: MX, y: top - h, width: w, height: h });
+        ctx.page.drawImage(img, { x: MX, y: top - h, width: w, height: h });
         leftBottom = top - h;
         logoDrawn = true;
       }
@@ -219,20 +193,21 @@ async function drawHeader(
     }
   }
   if (!logoDrawn) {
-    const nameLines = wrap(studio.studio_name ?? "Studio", bold, 16, leftColW);
-    let ly = top - 14;
+    const nameLines = wrap(studio.studio_name ?? "Studio", bold, 15, leftColW);
+    let ly = top - 13;
     for (const line of nameLines.slice(0, 2)) {
-      drawText(page, line, MX, ly, 16, bold, NAVY);
-      ly -= 19;
+      dText(ctx, line, MX, ly, 15, bold, NAVY);
+      ly -= 18;
     }
     if (studio.architect_name) {
-      drawText(page, studio.architect_name, MX, ly, 9.5, font, MUTED);
-      ly -= 13;
+      ly -= 2;
+      dText(ctx, studio.architect_name, MX, ly, 9, font, MUTED);
+      ly -= 12;
     }
     leftBottom = ly;
   }
 
-  // === RIGHT COLUMN: studio details, right-aligned, fully inside rightColW ===
+  // RIGHT column — studio details, right-aligned
   let yR = top - 2;
   const lineH = (size: number) => size + 4;
   const fit = (text: string, size: number, f: PDFFont): string => {
@@ -245,7 +220,7 @@ async function drawHeader(
   };
   const drawR = (text: string, size: number, f: PDFFont, color = TEXT) => {
     if (!text) return;
-    drawTextRight(page, fit(text, size, f), PAGE_W - MX, yR, size, f, color);
+    dTextRight(ctx, fit(text, size, f), PAGE_W - MX, yR, size, f, color);
     yR -= lineH(size);
   };
   if (logoDrawn) {
@@ -262,16 +237,11 @@ async function drawHeader(
   if (studio.vat_number) drawR(`P.IVA ${studio.vat_number}`, 8.5, font, MUTED);
   if (studio.albo_number) drawR(`Albo n. ${studio.albo_number}`, 8.5, font, MUTED);
 
-  const lowest = Math.min(leftBottom, yR) - 6;
-  ctx.y = lowest - 18;
+  const lowest = Math.min(leftBottom, yR) - 8;
+  ctx.y = lowest - 14;
 
-  page.drawLine({
-    start: { x: MX, y: ctx.y },
-    end: { x: PAGE_W - MX, y: ctx.y },
-    thickness: 0.8,
-    color: NAVY,
-  });
-  ctx.y -= 26;
+  dLine(ctx, MX, ctx.y, PAGE_W - MX, ctx.y, 0.8, NAVY);
+  ctx.y -= 28;
 }
 
 function drawClientBlock(
@@ -284,118 +254,97 @@ function drawClientBlock(
     projectAddress?: string;
   }
 ) {
-  const { page, font, bold } = ctx;
-  ensure(ctx, 90);
+  const { font, bold } = ctx;
+  ensure(ctx, 100);
   const blockTop = ctx.y;
 
-  // Two columns with gutter, no overlap
   const GUTTER = 24;
   const rightW = 220;
   const leftW = CONTENT_W - rightW - GUTTER;
 
   // LEFT — client
-  drawText(page, "SPETT.LE", MX, blockTop, 7.5, bold, MUTED);
+  dText(ctx, "SPETT.LE", MX, blockTop, 7.5, bold, MUTED);
   const nameLines = wrap(opts.clientName, bold, 14, leftW);
-  let ly = blockTop - 17;
+  let ly = blockTop - 18;
   for (const line of nameLines.slice(0, 2)) {
-    drawText(page, line, MX, ly, 14, bold, NAVY);
+    dText(ctx, line, MX, ly, 14, bold, NAVY);
     ly -= 17;
   }
   if (opts.projectAddress) {
     const lines = wrap(`Cantiere: ${opts.projectAddress}`, font, 9, leftW);
+    ly -= 2;
     for (const line of lines.slice(0, 2)) {
-      drawText(page, line, MX, ly - 2, 9, font, MUTED);
+      dText(ctx, line, MX, ly, 9, font, MUTED);
       ly -= 12;
     }
   }
   const leftBottom = ly - 6;
 
-  // RIGHT — meta box (subtle background)
+  // RIGHT — meta box
   const boxX = PAGE_W - MX - rightW;
   const rows: [string, string][] = [
     ["Preventivo n.", opts.quoteNumber],
     ["Data emissione", fmtDate(opts.quoteDate)],
     ["Validita' offerta", fmtDate(opts.validUntil)],
   ];
-  const boxH = rows.length * 18 + 14;
-  page.drawRectangle({
-    x: boxX,
-    y: blockTop - boxH + 6,
-    width: rightW,
-    height: boxH,
-    color: VERY_LIGHT,
-  });
+  const boxH = rows.length * 20 + 16;
+  dRect(ctx, boxX, blockTop - boxH + 8, rightW, boxH, VERY_LIGHT);
   let ry = blockTop - 6;
   for (const [k, v] of rows) {
-    drawText(page, k, boxX + 12, ry, 7.5, bold, MUTED);
-    drawTextRight(page, v, boxX + rightW - 12, ry - 1, 9.5, bold, NAVY);
-    ry -= 18;
+    dText(ctx, k, boxX + 14, ry, 7.5, bold, MUTED);
+    dTextRight(ctx, v, boxX + rightW - 14, ry - 1, 9.5, bold, NAVY);
+    ry -= 20;
   }
   const rightBottom = blockTop - boxH;
 
-  ctx.y = Math.min(leftBottom, rightBottom) - 18;
+  ctx.y = Math.min(leftBottom, rightBottom) - 20;
 }
 
 function drawTitleBlock(ctx: Ctx, q: QuoteContent) {
-  const { page, font, bold } = ctx;
+  const { font, bold } = ctx;
 
-  // Title with green accent bar
   const titleLines = wrap(q.title, bold, 13, CONTENT_W - 16);
   const titleH = titleLines.length * 17;
   ensure(ctx, titleH + 16);
 
-  page.drawRectangle({
-    x: MX,
-    y: ctx.y - titleH - 4,
-    width: 3,
-    height: titleH + 8,
-    color: GREEN,
-  });
+  dRect(ctx, MX, ctx.y - titleH - 4, 3, titleH + 8, GREEN);
   let ty = ctx.y - 12;
   for (const line of titleLines) {
-    drawText(page, line, MX + 12, ty, 13, bold, NAVY);
+    dText(ctx, line, MX + 12, ty, 13, bold, NAVY);
     ty -= 17;
   }
   ctx.y -= titleH + 14;
 
-  // Description
   if (q.description) {
     const descLines = wrap(q.description, font, 9.5, CONTENT_W);
     ensure(ctx, descLines.length * 13 + 6);
     for (const line of descLines) {
-      drawText(page, line, MX, ctx.y, 9.5, font, MUTED);
+      dText(ctx, line, MX, ctx.y, 9.5, font, MUTED);
       ctx.y -= 13;
     }
     ctx.y -= 8;
   }
 
-  // Meta row
-  ensure(ctx, 32);
+  ensure(ctx, 36);
   const colW = CONTENT_W / 2;
-  drawText(page, "DURATA STIMATA", MX, ctx.y, 7, bold, MUTED);
-  drawText(page, q.duration, MX, ctx.y - 13, 10, font, TEXT);
-  drawText(page, "LIVELLO FINITURE", MX + colW, ctx.y, 7, bold, MUTED);
-  drawText(page, q.finishLevel, MX + colW, ctx.y - 13, 10, font, TEXT);
-  ctx.y -= 36;
+  dText(ctx, "DURATA STIMATA", MX, ctx.y, 7, bold, MUTED);
+  dText(ctx, q.duration, MX, ctx.y - 14, 10, font, TEXT);
+  dText(ctx, "LIVELLO FINITURE", MX + colW, ctx.y, 7, bold, MUTED);
+  dText(ctx, q.finishLevel, MX + colW, ctx.y - 14, 10, font, TEXT);
+  ctx.y -= 38;
 }
 
 function drawSections(ctx: Ctx, q: QuoteContent) {
   q.sections.forEach((section, si) => {
-    const { page, font, bold } = ctx;
-    ensure(ctx, 50);
+    const { font, bold } = ctx;
+    ensure(ctx, 60);
 
     // Section header band
-    page.drawRectangle({
-      x: MX,
-      y: ctx.y - 18,
-      width: CONTENT_W,
-      height: 22,
-      color: VERY_LIGHT,
-    });
+    dRect(ctx, MX, ctx.y - 18, CONTENT_W, 22, VERY_LIGHT);
     const num = String(si + 1).padStart(2, "0");
-    drawText(page, num, MX + 10, ctx.y - 12, 10, bold, GREEN);
-    drawText(page, section.name.toUpperCase(), MX + 32, ctx.y - 12, 9.5, bold, NAVY);
-    ctx.y -= 30;
+    dText(ctx, num, MX + 10, ctx.y - 12, 10, bold, GREEN);
+    dText(ctx, section.name.toUpperCase(), MX + 32, ctx.y - 12, 9.5, bold, NAVY);
+    ctx.y -= 32;
 
     // Items
     for (const item of section.items) {
@@ -403,146 +352,107 @@ function drawSections(ctx: Ctx, q: QuoteContent) {
       const priceW = bold.widthOfTextAtSize(priceStr, 9.5);
       const nameMaxW = CONTENT_W - priceW - 30;
       const nameLines = wrap(item.name, font, 9.5, nameMaxW);
-      const itemH = Math.max(nameLines.length * 13, 13) + 4;
+      const itemH = Math.max(nameLines.length * 13, 13) + 6;
       ensure(ctx, itemH);
 
-      let ly = ctx.y;
+      let ily = ctx.y;
       let first = true;
       for (const line of nameLines) {
-        drawText(page, line, MX + 10, ly, 9.5, font, TEXT);
+        dText(ctx, line, MX + 10, ily, 9.5, font, TEXT);
         if (first) {
-          drawTextRight(page, priceStr, PAGE_W - MX - 4, ly, 9.5, bold, TEXT);
+          dTextRight(ctx, priceStr, PAGE_W - MX - 4, ily, 9.5, bold, TEXT);
           first = false;
         }
-        ly -= 13;
+        ily -= 13;
       }
-      // Light separator
-      page.drawLine({
-        start: { x: MX + 10, y: ly + 6 },
-        end: { x: PAGE_W - MX - 4, y: ly + 6 },
-        thickness: 0.3,
-        color: LIGHT,
-      });
-      ctx.y = ly - 2;
+      dLine(ctx, MX + 10, ily + 6, PAGE_W - MX - 4, ily + 6, 0.3, LIGHT);
+      ctx.y = ily - 2;
     }
 
     // Subtotal
-    ensure(ctx, 22);
-    ctx.y -= 4;
-    drawText(page, "Subtotale sezione", MX + 10, ctx.y, 8.5, font, MUTED);
-    drawTextRight(
-      page,
-      `EUR ${fmtPrice(section.subtotal)}`,
-      PAGE_W - MX - 4,
-      ctx.y,
-      10,
-      bold,
-      NAVY
-    );
-    ctx.y -= 22;
+    ensure(ctx, 24);
+    ctx.y -= 6;
+    dText(ctx, "Subtotale sezione", MX + 10, ctx.y, 8.5, font, MUTED);
+    dTextRight(ctx, `EUR ${fmtPrice(section.subtotal)}`, PAGE_W - MX - 4, ctx.y, 10, bold, NAVY);
+    ctx.y -= 24;
   });
 }
 
 function drawTotals(ctx: Ctx, q: QuoteContent, vatPercent: number) {
-  const { page, font, bold } = ctx;
   const imponibile = q.total;
   const iva = imponibile * (vatPercent / 100);
   const totale = imponibile + iva;
 
-  const boxW = 260;
-  const boxH = 92;
-  ensure(ctx, boxH + 10);
+  const boxW = 280;
+  const boxH = 100;
+  ensure(ctx, boxH + 12);
 
+  const { font, bold } = ctx;
   const boxX = PAGE_W - MX - boxW;
   const boxY = ctx.y - boxH;
 
-  page.drawRectangle({
-    x: boxX,
-    y: boxY,
-    width: boxW,
-    height: boxH,
-    color: NAVY,
-  });
+  dRect(ctx, boxX, boxY, boxW, boxH, NAVY);
 
-  // Rows
   const rowL = (label: string, value: string, yy: number) => {
-    drawText(page, label, boxX + 16, yy, 9, font, rgb(0.78, 0.82, 0.88));
-    drawTextRight(page, value, boxX + boxW - 16, yy, 10, bold, WHITE);
+    dText(ctx, label, boxX + 16, yy, 9, font, rgb(0.78, 0.82, 0.88));
+    dTextRight(ctx, value, boxX + boxW - 16, yy, 10, bold, WHITE);
   };
-  rowL("Imponibile", `EUR ${fmtPrice(imponibile)}`, boxY + boxH - 20);
-  rowL(`IVA ${vatPercent}%`, `EUR ${fmtPrice(iva)}`, boxY + boxH - 38);
+  rowL("Imponibile", `EUR ${fmtPrice(imponibile)}`, boxY + boxH - 22);
+  rowL(`IVA ${vatPercent}%`, `EUR ${fmtPrice(iva)}`, boxY + boxH - 42);
 
-  page.drawLine({
-    start: { x: boxX + 16, y: boxY + boxH - 48 },
-    end: { x: boxX + boxW - 16, y: boxY + boxH - 48 },
-    thickness: 0.5,
-    color: rgb(0.32, 0.38, 0.5),
-  });
+  dLine(ctx, boxX + 16, boxY + boxH - 52, boxX + boxW - 16, boxY + boxH - 52, 0.5, rgb(0.32, 0.38, 0.5));
 
-  drawText(page, "TOTALE", boxX + 16, boxY + 18, 11, bold, WHITE);
-  drawTextRight(
-    page,
-    `EUR ${fmtPrice(totale)}`,
-    boxX + boxW - 16,
-    boxY + 14,
-    16,
-    bold,
-    GREEN
-  );
+  dText(ctx, "TOTALE", boxX + 16, boxY + 20, 11, bold, WHITE);
+  dTextRight(ctx, `EUR ${fmtPrice(totale)}`, boxX + boxW - 16, boxY + 16, 16, bold, GREEN);
 
-  ctx.y = boxY - 22;
+  ctx.y = boxY - 24;
 }
 
 function drawNotesAndTerms(ctx: Ctx, q: QuoteContent, terms: string | null) {
-  const { page, font, bold } = ctx;
+  const { font, bold } = ctx;
 
   if (q.notes && q.notes.length > 0) {
-    ensure(ctx, 24);
-    drawText(page, "NOTE", MX, ctx.y, 8.5, bold, NAVY);
-    ctx.y -= 14;
+    ensure(ctx, 28);
+    dText(ctx, "NOTE", MX, ctx.y, 8.5, bold, NAVY);
+    ctx.y -= 16;
     q.notes.forEach((note, i) => {
       const lines = wrap(`${i + 1}. ${note}`, font, 8.5, CONTENT_W);
       ensure(ctx, lines.length * 12 + 4);
       for (const line of lines) {
-        drawText(page, line, MX, ctx.y, 8.5, font, MUTED);
+        dText(ctx, line, MX, ctx.y, 8.5, font, MUTED);
         ctx.y -= 12;
       }
       ctx.y -= 3;
     });
-    ctx.y -= 10;
+    ctx.y -= 12;
   }
 
   if (terms && terms.trim()) {
     ensure(ctx, 30);
-    drawText(page, "CONDIZIONI CONTRATTUALI", MX, ctx.y, 8.5, bold, NAVY);
-    ctx.y -= 14;
+    dText(ctx, "CONDIZIONI CONTRATTUALI", MX, ctx.y, 8.5, bold, NAVY);
+    ctx.y -= 16;
     const lines = wrap(terms, font, 8.5, CONTENT_W);
     for (const line of lines) {
       ensure(ctx, 12);
-      drawText(page, line, MX, ctx.y, 8.5, font, MUTED);
+      dText(ctx, line, MX, ctx.y, 8.5, font, MUTED);
       ctx.y -= 12;
     }
-    ctx.y -= 10;
+    ctx.y -= 12;
   }
 }
 
 function drawSignature(ctx: Ctx) {
-  const { page, font, bold } = ctx;
-  ensure(ctx, 70);
-  ctx.y -= 8;
+  const { bold } = ctx;
+  ensure(ctx, 80);
+  ctx.y -= 10;
   const colW = (CONTENT_W - 40) / 2;
   const drawBox = (x: number, label: string) => {
-    page.drawLine({
-      start: { x, y: ctx.y - 28 },
-      end: { x: x + colW, y: ctx.y - 28 },
-      thickness: 0.6,
-      color: TEXT,
-    });
-    drawText(page, label, x, ctx.y - 42, 7, bold, MUTED);
+    dLine(ctx, x, ctx.y - 30, x + colW, ctx.y - 30, 0.6, TEXT);
+    dText(ctx, label, x, ctx.y - 44, 7, bold, MUTED);
   };
   drawBox(MX, "PER ACCETTAZIONE - DATA E FIRMA DEL CLIENTE");
   drawBox(MX + colW + 40, "LO STUDIO");
-  ctx.y -= 60;
+  ctx.y -= 64;
 }
 
 const inputSchema = z.object({
@@ -634,7 +544,6 @@ export const generateQuotePdf = createServerFn({ method: "POST" })
     drawNotesAndTerms(ctx, data.quote, studio.default_terms ?? null);
     drawSignature(ctx);
 
-    // Draw footers on every page now that we know totals
     const total = pdf.getPageCount();
     for (let i = 0; i < total; i++) {
       ctx.page = pdf.getPage(i);

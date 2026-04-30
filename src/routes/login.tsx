@@ -58,7 +58,7 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
       <Link to="/" className="mb-10">
-        <img src={valoraLogo} alt="Valora" className="h-24 w-auto" />
+        <img src={valoraLogo} alt="Valora" className="h-32 w-auto" />
       </Link>
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">
