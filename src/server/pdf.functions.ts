@@ -186,8 +186,14 @@ async function drawHeader(
   const { page, font, bold, studio } = ctx;
   const top = PAGE_H - MT;
 
-  // Left side: logo
+  // Two clearly separated columns with a generous gutter to avoid overlap.
+  const GUTTER = 24;
+  const leftColW = Math.floor((CONTENT_W - GUTTER) * 0.42);
+  const rightColW = CONTENT_W - GUTTER - leftColW;
+
+  // === LEFT COLUMN: logo or studio name ===
   let leftBottom = top;
+  let logoDrawn = false;
   if (logoBytes && logoMime) {
     try {
       let img;
@@ -195,8 +201,8 @@ async function drawHeader(
       else if (logoMime.includes("jpeg") || logoMime.includes("jpg"))
         img = await ctx.pdf.embedJpg(logoBytes);
       if (img) {
-        const maxH = 55;
-        const maxW = 180;
+        const maxH = 60;
+        const maxW = leftColW;
         const ratio = img.width / img.height;
         let h = maxH;
         let w = h * ratio;
@@ -206,34 +212,46 @@ async function drawHeader(
         }
         page.drawImage(img, { x: MX, y: top - h, width: w, height: h });
         leftBottom = top - h;
+        logoDrawn = true;
       }
     } catch {
       // ignore
     }
   }
-  // Studio name fallback if no logo
-  if (leftBottom === top && studio.studio_name) {
-    drawText(page, studio.studio_name, MX, top - 14, 14, bold, NAVY);
-    leftBottom = top - 18;
-    if (studio.architect_name) {
-      drawText(page, studio.architect_name, MX, top - 30, 9, font, MUTED);
-      leftBottom = top - 34;
+  if (!logoDrawn) {
+    const nameLines = wrap(studio.studio_name ?? "Studio", bold, 16, leftColW);
+    let ly = top - 14;
+    for (const line of nameLines.slice(0, 2)) {
+      drawText(page, line, MX, ly, 16, bold, NAVY);
+      ly -= 19;
     }
+    if (studio.architect_name) {
+      drawText(page, studio.architect_name, MX, ly, 9.5, font, MUTED);
+      ly -= 13;
+    }
+    leftBottom = ly;
   }
 
-  // Right side: studio info stack
-  let yR = top - 4;
-  const lineH = (size: number) => size + 3;
+  // === RIGHT COLUMN: studio details, right-aligned, fully inside rightColW ===
+  let yR = top - 2;
+  const lineH = (size: number) => size + 4;
+  const fit = (text: string, size: number, f: PDFFont): string => {
+    let s = sanitize(text);
+    if (f.widthOfTextAtSize(s, size) <= rightColW) return s;
+    while (s.length > 4 && f.widthOfTextAtSize(s + "...", size) > rightColW) {
+      s = s.slice(0, -1);
+    }
+    return s + "...";
+  };
   const drawR = (text: string, size: number, f: PDFFont, color = TEXT) => {
     if (!text) return;
-    drawTextRight(page, text, PAGE_W - MX, yR, size, f, color);
+    drawTextRight(page, fit(text, size, f), PAGE_W - MX, yR, size, f, color);
     yR -= lineH(size);
   };
-  if (logoBytes) {
-    // Show studio name on the right when logo is on the left
+  if (logoDrawn) {
     drawR(studio.studio_name ?? "", 11, bold, NAVY);
   }
-  drawR(studio.architect_name ?? "", 9, font, MUTED);
+  if (studio.architect_name) drawR(studio.architect_name, 9, font, MUTED);
   if (studio.address) drawR(studio.address, 8.5, font, MUTED);
   const cityLine = [studio.postal_code, studio.city, studio.province ? `(${studio.province})` : null]
     .filter(Boolean)
@@ -244,18 +262,16 @@ async function drawHeader(
   if (studio.vat_number) drawR(`P.IVA ${studio.vat_number}`, 8.5, font, MUTED);
   if (studio.albo_number) drawR(`Albo n. ${studio.albo_number}`, 8.5, font, MUTED);
 
-  // Set y below the lower of the two sides, with safe gap
-  const lowest = Math.min(leftBottom, yR);
+  const lowest = Math.min(leftBottom, yR) - 6;
   ctx.y = lowest - 18;
 
-  // Divider
   page.drawLine({
     start: { x: MX, y: ctx.y },
     end: { x: PAGE_W - MX, y: ctx.y },
     thickness: 0.8,
     color: NAVY,
   });
-  ctx.y -= 24;
+  ctx.y -= 26;
 }
 
 function drawClientBlock(
