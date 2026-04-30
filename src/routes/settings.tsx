@@ -50,7 +50,7 @@ function SettingsPage() {
             <ArrowLeft className="w-4 h-4" />
             App
           </Link>
-          <img src={valoraLogo} alt="Valora" className="h-28 w-auto" />
+          <img src={valoraLogo} alt="Valora" className="h-14 md:h-16 w-auto" />
           <Link to="/clients" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
             <Users className="w-4 h-4" />
             Clienti

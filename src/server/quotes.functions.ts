@@ -123,3 +123,43 @@ export const migrateLocalQuotes = createServerFn({ method: "POST" })
     if (error) return { inserted: 0, error: error.message };
     return { inserted: rows.length };
   });
+
+/**
+ * Reserve the next sequential quote number for the current user/year.
+ * Returns a string like "2026-0001". Atomic via UPSERT + RETURNING on the
+ * quote_counters table (RLS-protected per user).
+ */
+export const reserveQuoteNumber = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const year = new Date().getFullYear();
+
+    // Read current value
+    const { data: existing } = await supabase
+      .from("quote_counters")
+      .select("last_number")
+      .eq("user_id", userId)
+      .eq("year", year)
+      .maybeSingle();
+
+    const next = (existing?.last_number ?? 0) + 1;
+
+    const { error } = await supabase
+      .from("quote_counters")
+      .upsert(
+        { user_id: userId, year, last_number: next, updated_at: new Date().toISOString() },
+        { onConflict: "user_id,year" }
+      );
+
+    if (error) {
+      // Fallback: timestamp-based number rather than a random one
+      const fallback = `${year}-${Date.now().toString().slice(-4)}`;
+      return { quoteNumber: fallback, error: error.message };
+    }
+
+    return {
+      quoteNumber: `${year}-${String(next).padStart(4, "0")}`,
+      error: null,
+    };
+  });

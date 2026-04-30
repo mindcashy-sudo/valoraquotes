@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { generateQuotePdf } from "@/server/pdf.functions";
+import { reserveQuoteNumber } from "@/server/quotes.functions";
 
 export interface QuoteItem {
   name: string;
@@ -36,6 +37,8 @@ export interface QuoteData {
 
 interface QuoteDisplayProps {
   quote: QuoteData;
+  defaultClientName?: string;
+  defaultProjectAddress?: string;
 }
 
 function formatPrice(price: number): string {
@@ -46,12 +49,12 @@ function getSectionNumber(index: number): string {
   return String(index + 1).padStart(2, "0");
 }
 
-export function QuoteDisplay({ quote }: QuoteDisplayProps) {
+export function QuoteDisplay({ quote, defaultClientName, defaultProjectAddress }: QuoteDisplayProps) {
   const [copied, setCopied] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [clientName, setClientName] = useState("");
-  const [projectAddress, setProjectAddress] = useState("");
+  const [clientName, setClientName] = useState(defaultClientName ?? "");
+  const [projectAddress, setProjectAddress] = useState(defaultProjectAddress ?? "");
 
   const quoteText = [
     quote.title.toUpperCase(),
@@ -87,14 +90,23 @@ export function QuoteDisplay({ quote }: QuoteDisplayProps) {
   const handleDownloadPdf = async () => {
     setPdfLoading(true);
     try {
+      // Reserve a real progressive number from the server (per user/year)
+      let quoteNumber: string | undefined;
+      try {
+        const reserve = await reserveQuoteNumber();
+        quoteNumber = reserve.quoteNumber;
+      } catch {
+        // Non-blocking — server will fall back to a generated number
+      }
+
       const res = await generateQuotePdf({
         data: {
           quote,
           clientName: clientName.trim() || undefined,
           projectAddress: projectAddress.trim() || undefined,
+          quoteNumber,
         },
       });
-      // base64 → blob
       const binary = atob(res.pdf);
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
@@ -127,7 +139,7 @@ export function QuoteDisplay({ quote }: QuoteDisplayProps) {
               <div className="flex items-center gap-2.5 mb-3">
                 <FileText className="w-4 h-4 text-valora-green opacity-80" />
                 <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-foreground/50">
-                  Preventivo di massima
+                  Preventivo
                 </span>
               </div>
               <h2 className="text-lg md:text-xl font-bold tracking-tight text-primary-foreground leading-snug">
