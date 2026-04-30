@@ -139,7 +139,7 @@ export function QuoteDisplay({ quote, defaultClientName, defaultProjectAddress }
               <div className="flex items-center gap-2.5 mb-3">
                 <FileText className="w-4 h-4 text-valora-green opacity-80" />
                 <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-foreground/50">
-                  Preventivo di massima
+                  Preventivo
                 </span>
               </div>
               <h2 className="text-lg md:text-xl font-bold tracking-tight text-primary-foreground leading-snug">
