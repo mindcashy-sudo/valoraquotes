@@ -269,38 +269,55 @@ function drawClientBlock(
   }
 ) {
   const { page, font, bold } = ctx;
-  // Block height ~ 70pt
-  ensure(ctx, 80);
+  ensure(ctx, 90);
   const blockTop = ctx.y;
+
+  // Two columns with gutter, no overlap
+  const GUTTER = 24;
+  const rightW = 220;
+  const leftW = CONTENT_W - rightW - GUTTER;
 
   // LEFT — client
   drawText(page, "SPETT.LE", MX, blockTop, 7.5, bold, MUTED);
-  drawText(page, opts.clientName, MX, blockTop - 16, 13, bold, NAVY);
+  const nameLines = wrap(opts.clientName, bold, 14, leftW);
+  let ly = blockTop - 17;
+  for (const line of nameLines.slice(0, 2)) {
+    drawText(page, line, MX, ly, 14, bold, NAVY);
+    ly -= 17;
+  }
   if (opts.projectAddress) {
-    const lines = wrap(`Cantiere: ${opts.projectAddress}`, font, 9, CONTENT_W / 2 - 10);
-    let ly = blockTop - 32;
+    const lines = wrap(`Cantiere: ${opts.projectAddress}`, font, 9, leftW);
     for (const line of lines.slice(0, 2)) {
-      drawText(page, line, MX, ly, 9, font, MUTED);
+      drawText(page, line, MX, ly - 2, 9, font, MUTED);
       ly -= 12;
     }
   }
+  const leftBottom = ly - 6;
 
-  // RIGHT — meta box
-  const boxW = 200;
-  const boxX = PAGE_W - MX - boxW;
+  // RIGHT — meta box (subtle background)
+  const boxX = PAGE_W - MX - rightW;
   const rows: [string, string][] = [
     ["Preventivo n.", opts.quoteNumber],
     ["Data emissione", fmtDate(opts.quoteDate)],
     ["Validita' offerta", fmtDate(opts.validUntil)],
   ];
-  let ry = blockTop;
+  const boxH = rows.length * 18 + 14;
+  page.drawRectangle({
+    x: boxX,
+    y: blockTop - boxH + 6,
+    width: rightW,
+    height: boxH,
+    color: VERY_LIGHT,
+  });
+  let ry = blockTop - 6;
   for (const [k, v] of rows) {
-    drawText(page, k, boxX, ry, 8, font, MUTED);
-    drawTextRight(page, v, PAGE_W - MX, ry, 9, bold, TEXT);
-    ry -= 16;
+    drawText(page, k, boxX + 12, ry, 7.5, bold, MUTED);
+    drawTextRight(page, v, boxX + rightW - 12, ry - 1, 9.5, bold, NAVY);
+    ry -= 18;
   }
+  const rightBottom = blockTop - boxH;
 
-  ctx.y = blockTop - 70;
+  ctx.y = Math.min(leftBottom, rightBottom) - 18;
 }
 
 function drawTitleBlock(ctx: Ctx, q: QuoteContent) {
