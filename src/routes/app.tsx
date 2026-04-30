@@ -310,16 +310,51 @@ function AppPage() {
       <main className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-2xl">
           {step === "record" && (
-            <div className="text-center space-y-10">
-              <div className="space-y-3">
+            <div className="space-y-10">
+              <div className="text-center space-y-3">
                 <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-                  Descrivi il tuo progetto
+                  Descrivi il tuo prossimo progetto
                 </h1>
-                <p className="text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
-                  Registra un memo vocale e genereremo un preventivo professionale in pochi secondi.
+                <p className="text-base md:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
+                  Registra un memo vocale o digita la richiesta del cliente.
+                  In pochi secondi avrai un preventivo strutturato, pronto da inviare.
+                </p>
+                {!isSubscribed && (
+                  <p className="text-xs text-muted-foreground/80">
+                    {remaining > 0
+                      ? `Hai ${remaining} ${remaining === 1 ? "preventivo gratuito" : "preventivi gratuiti"} rimanenti.`
+                      : "Hai esaurito i preventivi gratuiti."}
+                  </p>
+                )}
+              </div>
+
+              <VoiceRecorder onTranscription={handleTranscription} />
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 justify-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Lightbulb className="w-3.5 h-3.5 text-valora-green" />
+                  Oppure parti da un esempio reale
+                </div>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  {EXAMPLE_PROMPTS.map((p, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleTranscription(p)}
+                      className="text-left rounded-xl border border-border bg-card hover:border-valora-green/50 hover:shadow-sm transition-all p-4 text-xs text-muted-foreground leading-relaxed group"
+                    >
+                      <span className="block text-[10px] font-bold uppercase tracking-wider text-valora-green/80 mb-1.5">
+                        Esempio {i + 1}
+                      </span>
+                      <span className="line-clamp-3 group-hover:text-foreground transition-colors">
+                        {p}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground/70 text-center">
+                  Più dettagli fornisci (mq, città, finiture, impianti), più il preventivo sarà accurato.
                 </p>
               </div>
-              <VoiceRecorder onTranscription={handleTranscription} />
             </div>
           )}
 
@@ -327,19 +362,33 @@ function AppPage() {
             <div className="space-y-6">
               <div className="space-y-1">
                 <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                  Rivedi la trascrizione
+                  Rivedi i dettagli del progetto
                 </h2>
                 <p className="text-muted-foreground">
-                  Modifica se necessario, poi genera il preventivo.
+                  Aggiungi metratura, città, tipo di finiture e impianti per un preventivo più preciso.
                 </p>
               </div>
-              <textarea
-                value={transcription}
-                onChange={(e) => setTranscription(e.target.value)}
-                className="w-full h-40 rounded-xl border border-input bg-card px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 resize-none transition-shadow"
-                placeholder="La trascrizione apparirà qui..."
-                maxLength={2000}
-              />
+              <div className="relative">
+                <textarea
+                  value={transcription}
+                  onChange={(e) => setTranscription(e.target.value)}
+                  className="w-full h-44 rounded-xl border border-input bg-card px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 resize-none transition-shadow"
+                  placeholder="Es. Ristrutturazione 90 mq a Roma zona Prati, due bagni, finiture fascia media, rifacimento impianti..."
+                  maxLength={2000}
+                />
+                <div className="absolute bottom-2 right-3 text-[10px] tabular-nums text-muted-foreground/70">
+                  {transcription.trim().length} / 2000
+                </div>
+              </div>
+              {transcription.trim().length > 0 && transcription.trim().length < MIN_INPUT_CHARS && (
+                <p className="text-xs text-muted-foreground bg-secondary/60 rounded-lg p-3 flex items-start gap-2">
+                  <Lightbulb className="w-3.5 h-3.5 text-valora-green mt-0.5 shrink-0" />
+                  <span>
+                    Aggiungi almeno {MIN_INPUT_CHARS} caratteri. Includi <strong>metratura</strong>,
+                    <strong> città/zona</strong> e tipo di intervento per un risultato realistico.
+                  </span>
+                </p>
+              )}
               {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex gap-3">
                 <Button
@@ -351,9 +400,10 @@ function AppPage() {
                 </Button>
                 <Button
                   onClick={handleGenerate}
-                  disabled={!transcription.trim()}
+                  disabled={transcription.trim().length < MIN_INPUT_CHARS}
                   className="flex-1 h-12 rounded-xl text-base"
                 >
+                  <Sparkles className="w-4 h-4 mr-2" />
                   Genera Preventivo
                 </Button>
               </div>
@@ -362,24 +412,54 @@ function AppPage() {
 
           {step === "generating" && (
             <div className="text-center space-y-6 py-20">
-              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto">
-                <Loader2 className="w-7 h-7 animate-spin text-muted-foreground" />
+              <div className="w-16 h-16 rounded-2xl bg-valora-green/10 flex items-center justify-center mx-auto">
+                <Loader2 className="w-7 h-7 animate-spin text-valora-green" />
               </div>
-              <p className="text-muted-foreground text-lg">
-                Generazione del preventivo in corso...
-              </p>
+              <div className="space-y-2">
+                <p className="text-foreground text-lg font-medium">
+                  Sto preparando il tuo preventivo…
+                </p>
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                  Sto strutturando le sezioni, calcolando i prezzi sui benchmark di mercato italiano
+                  e formulando le note tecniche.
+                </p>
+              </div>
             </div>
           )}
 
           {step === "result" && quote && (
-            <div className="space-y-4">
-              <QuoteDisplay quote={quote} />
+            <div className="space-y-5">
+              {/* Wow moment */}
+              <div className="rounded-2xl border border-valora-green/30 bg-valora-green/5 p-4 flex items-center gap-3 print:hidden">
+                <div className="w-9 h-9 rounded-full bg-valora-green/15 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-valora-green" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    Preventivo pronto in pochi secondi
+                  </p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5">
+                    <Clock className="w-3 h-3" />
+                    Hai risparmiato circa 2-3 ore di lavoro manuale.
+                    {!saved && <span className="hidden sm:inline">Salvalo per averlo sempre nel tuo archivio.</span>}
+                  </p>
+                </div>
+              </div>
+
+              <QuoteDisplay
+                quote={quote}
+                defaultClientName={selectedClientName}
+                defaultProjectAddress={projectAddress}
+              />
 
               {!saved && (
                 <div className="bg-card border border-border rounded-2xl p-5 space-y-3 print:hidden">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Collega a cliente (opzionale)
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      Collega a cliente <span className="font-normal normal-case text-muted-foreground/60">(opzionale)</span>
+                    </p>
+                  </div>
                   <div className="grid sm:grid-cols-2 gap-3">
                     <Select
                       value={selectedClientId || "none"}
@@ -447,6 +527,15 @@ function AppPage() {
                   Nuovo
                 </Button>
               </div>
+
+              {saved && (
+                <p className="text-center text-xs text-muted-foreground print:hidden">
+                  Salvato nel tuo archivio.{" "}
+                  <Link to="/saved" className="underline hover:text-foreground">
+                    Vedi tutti i preventivi
+                  </Link>
+                </p>
+              )}
             </div>
           )}
 
