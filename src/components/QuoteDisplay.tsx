@@ -49,12 +49,12 @@ function getSectionNumber(index: number): string {
   return String(index + 1).padStart(2, "0");
 }
 
-export function QuoteDisplay({ quote }: QuoteDisplayProps) {
+export function QuoteDisplay({ quote, defaultClientName, defaultProjectAddress }: QuoteDisplayProps) {
   const [copied, setCopied] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
-  const [clientName, setClientName] = useState("");
-  const [projectAddress, setProjectAddress] = useState("");
+  const [clientName, setClientName] = useState(defaultClientName ?? "");
+  const [projectAddress, setProjectAddress] = useState(defaultProjectAddress ?? "");
 
   const quoteText = [
     quote.title.toUpperCase(),
