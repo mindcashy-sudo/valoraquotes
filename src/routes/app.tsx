@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings } from "lucide-react";
+import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings, Users } from "lucide-react";
+import { toast } from "sonner";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
 import { QuoteEditor } from "@/components/QuoteEditor";
@@ -9,8 +10,15 @@ import { generateQuote } from "@/server/generate-quote.functions";
 import { getQuoteStatus, saveQuoteFn, migrateLocalQuotes } from "@/server/quotes.functions";
 import { syncCheckoutSession, syncCurrentStripeSubscription } from "@/server/stripe.functions";
 import { getStudioProfile } from "@/server/studio.functions";
+import { listClients } from "@/server/clients.functions";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 import { getSavedQuotes } from "@/lib/quote-storage";
 import valoraLogo from "@/assets/valora-logo.png";
