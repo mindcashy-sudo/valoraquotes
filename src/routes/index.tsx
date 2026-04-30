@@ -331,14 +331,82 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* Pricing */}
+      <section id="pricing" className="py-20 md:py-28 px-6 border-t border-border/40">
+        <div className="max-w-3xl mx-auto">
+          <Reveal className="text-center mb-12">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-valora-green mb-3">Prezzo</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Un solo piano. Tutto incluso.
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              Prezzo bloccato per i primi 100 architetti.
+            </p>
+          </Reveal>
+          <Reveal>
+            <div className="bg-card border-2 border-valora-green/40 rounded-3xl p-8 md:p-10 shadow-xl shadow-valora-green/5 max-w-md mx-auto">
+              <div className="flex items-baseline gap-2">
+                <span className="text-5xl font-bold tracking-tight">€35</span>
+                <span className="text-muted-foreground">/mese</span>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">Early Access · cancelli quando vuoi</p>
+              <ul className="mt-7 space-y-3">
+                {[
+                  "Preventivi illimitati",
+                  "PDF brandizzati con il tuo logo",
+                  "Archivio clienti e progetti",
+                  "Onboarding studio in 2 minuti",
+                  "Supporto via email",
+                ].map((b) => (
+                  <li key={b} className="flex items-start gap-3 text-sm">
+                    <CheckCircle2 className="w-4 h-4 text-valora-green mt-0.5 shrink-0" />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/app"
+                className="mt-8 group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 text-base font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20"
+              >
+                Inizia con 3 preventivi gratis
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 md:py-28 px-6 bg-secondary/40 border-t border-border/40">
+        <div className="max-w-3xl mx-auto">
+          <Reveal className="text-center mb-12">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-valora-green mb-3">Domande frequenti</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Tutto chiaro</h2>
+          </Reveal>
+          <RevealStagger className="space-y-4" stagger={0.08}>
+            {[
+              { q: "I prezzi dei preventivi sono affidabili?", a: "Valora usa benchmark di mercato italiani aggiornati (€/mq, impianti, opere edili) e li adatta alla tua zona di lavoro. Restano sempre modificabili prima dell'invio." },
+              { q: "Posso usare il mio logo e i miei dati nei PDF?", a: "Sì. In Impostazioni studio carichi logo, P.IVA, IBAN e condizioni standard una volta sola: compaiono automaticamente in ogni PDF generato." },
+              { q: "Devo installare qualcosa?", a: "No. Valora funziona nel browser, da desktop e mobile. I dati restano nel tuo account." },
+              { q: "Posso cancellare l'abbonamento?", a: "In qualsiasi momento, dal tuo account. Senza penali, senza vincoli." },
+            ].map((f) => (
+              <RevealItem key={f.q} className="bg-card border border-border rounded-2xl p-6">
+                <h3 className="font-semibold">{f.q}</h3>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{f.a}</p>
+              </RevealItem>
+            ))}
+          </RevealStagger>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="py-20 md:py-28 px-6 border-t border-border/40">
         <Reveal className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Pronto a risparmiare tempo?
+            Il tuo prossimo preventivo, in 2 minuti.
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Prova Valora gratuitamente. Nessun login, nessuna carta di credito.
+            Prova Valora gratis. 3 preventivi inclusi, nessuna carta richiesta.
           </p>
           <Link
             to="/app"
