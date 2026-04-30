@@ -44,11 +44,11 @@ await mod.drawHeader(ctx, null, null);
 console.log("after header y=", ctx.y);
 mod.drawClientBlock(ctx, { clientName: "X", quoteNumber: "1", quoteDate: new Date(), validUntil: new Date() });
 console.log("after client y=", ctx.y);
-mod.drawTitleBlock(ctx, mockQuote);
+mod.drawTitleBlock(ctx, mockQuoteX);
 console.log("after title y=", ctx.y);
-mod.drawSections(ctx, mockQuote);
+mod.drawSections(ctx, mockQuoteX);
 console.log("after sections y=", ctx.y, "pages=", pdf.getPageCount());
-mod.drawTotals(ctx, mockQuote, 22);
+mod.drawTotals(ctx, mockQuoteX, 22);
 console.log("after totals y=", ctx.y, "pages=", pdf.getPageCount());
 
 const mockQuoteBig = { title: "Ristrutturazione completa appartamento 95 mq - Milano centro", description: "Ristrutturazione integrale.", duration: "14-16 settimane", finishLevel: "Medio-alto", sections: [
