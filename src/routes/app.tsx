@@ -246,7 +246,7 @@ function AppPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between gap-3">
           <Link to="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity shrink-0">
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-            <img src={valoraLogo} alt="Valora" className="h-28 md:h-32 w-auto" />
+            <img src={valoraLogo} alt="Valora" className="h-14 md:h-16 w-auto" />
           </Link>
           <div className="flex items-center gap-2">
             <Link to="/clients">
