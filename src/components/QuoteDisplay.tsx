@@ -12,6 +12,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { generateQuotePdf } from "@/server/pdf.functions";
+import { reserveQuoteNumber } from "@/server/quotes.functions";
 
 export interface QuoteItem {
   name: string;
