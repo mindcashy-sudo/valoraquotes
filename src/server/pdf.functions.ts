@@ -45,26 +45,29 @@ interface StudioRow {
 // === Layout (A4 in points) ===
 const PAGE_W = 595.28;
 const PAGE_H = 841.89;
-const MX = 50;
-const MT = 50;
-const MB = 70;
+const MX = 48;
+const MT = 46;
+const MB = 64;
 const CONTENT_W = PAGE_W - 2 * MX;
 
-// Brand colors
-const NAVY = rgb(0.06, 0.11, 0.2);
-const GREEN = rgb(0.18, 0.6, 0.34);
-const TEXT = rgb(0.13, 0.13, 0.16);
-const MUTED = rgb(0.45, 0.47, 0.52);
-const LIGHT = rgb(0.88, 0.89, 0.92);
-const VERY_LIGHT = rgb(0.965, 0.97, 0.975);
+// Brand palette — editorial, restrained, premium
+const INK = rgb(0.07, 0.09, 0.14);          // primary text / headings
+const NAVY = rgb(0.06, 0.11, 0.2);          // hero bands
+const ACCENT = rgb(0.16, 0.55, 0.32);       // green accent (sparingly)
+const TEXT = rgb(0.18, 0.2, 0.24);          // body text
+const MUTED = rgb(0.46, 0.49, 0.55);        // labels / meta
+const HAIRLINE = rgb(0.84, 0.86, 0.9);      // dividers
+const ZEBRA = rgb(0.975, 0.978, 0.985);     // alt rows
+const PANEL = rgb(0.96, 0.965, 0.975);      // soft panels
 const WHITE = rgb(1, 1, 1);
 
 const fmtPrice = (n: number) =>
   n.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const fmtDate = (d: Date) =>
-  d.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "numeric" });
+  d.toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" });
 
+// Helvetica (WinAnsi) supports €, so we keep it and only strip true unsupported glyphs.
 function sanitize(input: string | null | undefined): string {
   if (!input) return "";
   return input
@@ -74,9 +77,11 @@ function sanitize(input: string | null | undefined): string {
     .replace(/[\u2013\u2014\u2212]/g, "-")
     .replace(/\u2026/g, "...")
     .replace(/\u2022/g, "-")
-    .replace(/\u20AC/g, "EUR ")
-    .replace(/[^\x09\x0A\x0D\x20-\x7E\u00A1-\u00FF]/g, "");
+    // Keep printable ASCII + Latin-1 + €
+    .replace(/[^\x09\x0A\x0D\x20-\x7E\u00A1-\u00FF\u20AC]/g, "");
 }
+
+const eur = (n: number) => `€ ${fmtPrice(n)}`;
 
 function wrap(text: string, font: PDFFont, size: number, maxW: number): string[] {
   const safe = sanitize(text);
@@ -112,23 +117,17 @@ interface Ctx {
   studio: StudioRow;
 }
 
-// IMPORTANT: all draw helpers below take Ctx so they always render on
-// ctx.page (which can change after a page break via newPage/ensure).
-
 function dText(ctx: Ctx, text: string, x: number, y: number, size: number, font: PDFFont, color = TEXT) {
   ctx.page.drawText(sanitize(text), { x, y, size, font, color });
 }
-
 function dTextRight(ctx: Ctx, text: string, rightX: number, y: number, size: number, font: PDFFont, color = TEXT) {
   const safe = sanitize(text);
   const w = font.widthOfTextAtSize(safe, size);
   ctx.page.drawText(safe, { x: rightX - w, y, size, font, color });
 }
-
 function dRect(ctx: Ctx, x: number, y: number, width: number, height: number, color: ReturnType<typeof rgb>) {
   ctx.page.drawRectangle({ x, y, width, height, color });
 }
-
 function dLine(ctx: Ctx, x1: number, y1: number, x2: number, y2: number, thickness: number, color: ReturnType<typeof rgb>) {
   ctx.page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness, color });
 }
@@ -137,37 +136,35 @@ function newPage(ctx: Ctx) {
   ctx.page = ctx.pdf.addPage([PAGE_W, PAGE_H]);
   ctx.y = PAGE_H - MT;
 }
-
 function ensure(ctx: Ctx, needed: number) {
   if (ctx.y - needed < MB) newPage(ctx);
 }
 
 function drawFooter(ctx: Ctx, pageNum: number, pageTotal: number) {
   const { font, studio } = ctx;
-  const y = 38;
-  dLine(ctx, MX, y + 14, PAGE_W - MX, y + 14, 0.5, LIGHT);
-  const parts = [
+  const y = 36;
+  dLine(ctx, MX, y + 16, PAGE_W - MX, y + 16, 0.4, HAIRLINE);
+  const left = [
     studio.studio_name,
     studio.vat_number ? `P.IVA ${studio.vat_number}` : null,
-    studio.email,
-    studio.phone,
   ]
     .filter(Boolean)
-    .join("  -  ");
-  dText(ctx, parts, MX, y, 7.5, font, MUTED);
-  dTextRight(ctx, `Pagina ${pageNum} di ${pageTotal}`, PAGE_W - MX, y, 7.5, font, MUTED);
+    .join("  •  ");
+  const right = [studio.email, studio.phone].filter(Boolean).join("  •  ");
+  dText(ctx, left, MX, y, 7.5, font, MUTED);
+  const center = `Pagina ${pageNum} di ${pageTotal}`;
+  const cw = font.widthOfTextAtSize(center, 7.5);
+  dText(ctx, center, (PAGE_W - cw) / 2, y, 7.5, font, MUTED);
+  dTextRight(ctx, right, PAGE_W - MX, y, 7.5, font, MUTED);
 }
 
 async function drawHeader(ctx: Ctx, logoBytes: Uint8Array | null, logoMime: string | null) {
   const { font, bold, studio } = ctx;
   const top = PAGE_H - MT;
 
-  // Strict columns. Logo lives in a fixed box on the LEFT; studio details
-  // live on the RIGHT. The two NEVER share horizontal space, so they cannot
-  // overlap regardless of logo aspect ratio.
   const GUTTER = 28;
-  const LOGO_BOX_W = 150; // hard cap — wide logos shrink to fit, never bleed right
-  const LOGO_BOX_H = 56;
+  const LOGO_BOX_W = 140;
+  const LOGO_BOX_H = 54;
   const rightColX = MX + LOGO_BOX_W + GUTTER;
   const rightColW = PAGE_W - MX - rightColX;
 
@@ -181,14 +178,12 @@ async function drawHeader(ctx: Ctx, logoBytes: Uint8Array | null, logoMime: stri
         img = await ctx.pdf.embedJpg(logoBytes);
       if (img) {
         const ratio = img.width / img.height;
-        // Fit inside LOGO_BOX_W x LOGO_BOX_H, preserving aspect ratio.
         let h = LOGO_BOX_H;
         let w = h * ratio;
         if (w > LOGO_BOX_W) {
           w = LOGO_BOX_W;
           h = w / ratio;
         }
-        // Anchor to top-left of the box, vertically centered if shorter.
         const yOffset = (LOGO_BOX_H - h) / 2;
         ctx.page.drawImage(img, {
           x: MX,
@@ -200,25 +195,25 @@ async function drawHeader(ctx: Ctx, logoBytes: Uint8Array | null, logoMime: stri
         logoDrawn = true;
       }
     } catch {
-      // ignore — fall back to text below
+      // ignore
     }
   }
   if (!logoDrawn) {
-    const nameLines = wrap(studio.studio_name ?? "Studio", bold, 16, LOGO_BOX_W + GUTTER);
+    const nameLines = wrap(studio.studio_name ?? "Studio", bold, 17, LOGO_BOX_W + GUTTER);
     let ly = top - 14;
     for (const line of nameLines.slice(0, 2)) {
-      dText(ctx, line, MX, ly, 16, bold, NAVY);
-      ly -= 19;
+      dText(ctx, line, MX, ly, 17, bold, NAVY);
+      ly -= 20;
     }
     if (studio.architect_name) {
-      ly -= 2;
-      dText(ctx, studio.architect_name, MX, ly, 9.5, font, MUTED);
+      ly -= 1;
+      dText(ctx, studio.architect_name, MX, ly, 9, font, MUTED);
       ly -= 12;
     }
     leftBottom = ly;
   }
 
-  // RIGHT column — studio details, right-aligned, strictly inside rightColW.
+  // RIGHT — studio details, right aligned
   let yR = top - 2;
   const lineH = (size: number) => size + 4;
   const fit = (text: string, size: number, f: PDFFont): string => {
@@ -234,34 +229,30 @@ async function drawHeader(ctx: Ctx, logoBytes: Uint8Array | null, logoMime: stri
     dTextRight(ctx, fit(text, size, f), PAGE_W - MX, yR, size, f, color);
     yR -= lineH(size);
   };
-  if (logoDrawn && studio.studio_name) {
-    drawR(studio.studio_name, 11, bold, NAVY);
-  }
+  if (logoDrawn && studio.studio_name) drawR(studio.studio_name, 11, bold, NAVY);
   if (studio.architect_name) drawR(studio.architect_name, 9, font, MUTED);
   if (studio.address) drawR(studio.address, 8.5, font, MUTED);
   const cityLine = [studio.postal_code, studio.city, studio.province ? `(${studio.province})` : null]
     .filter(Boolean)
     .join(" ");
   if (cityLine) drawR(cityLine, 8.5, font, MUTED);
-  if (studio.phone) drawR(`Tel. ${studio.phone}`, 8.5, font, MUTED);
+  if (studio.phone) drawR(`T  ${studio.phone}`, 8.5, font, MUTED);
   if (studio.email) drawR(studio.email, 8.5, font, MUTED);
-  if (studio.pec) drawR(`PEC: ${studio.pec}`, 8.5, font, MUTED);
-  if (studio.vat_number) drawR(`P.IVA ${studio.vat_number}`, 8.5, font, MUTED);
+  if (studio.pec) drawR(`PEC  ${studio.pec}`, 8.5, font, MUTED);
+  if (studio.vat_number) drawR(`P.IVA  ${studio.vat_number}`, 8.5, font, MUTED);
   if (studio.fiscal_code && studio.fiscal_code !== studio.vat_number) {
-    drawR(`C.F. ${studio.fiscal_code}`, 8.5, font, MUTED);
+    drawR(`C.F.  ${studio.fiscal_code}`, 8.5, font, MUTED);
   }
   if (studio.albo_number) drawR(`Albo n. ${studio.albo_number}`, 8.5, font, MUTED);
 
-  // Use the LOWER of the two columns as baseline; both have safe horizontal
-  // separation so we just need vertical clearance from the deepest content.
-  const lowest = Math.min(leftBottom, yR) - 10;
-  ctx.y = lowest - 8;
-
-  dLine(ctx, MX, ctx.y, PAGE_W - MX, ctx.y, 0.8, NAVY);
-  ctx.y -= 28;
+  const lowest = Math.min(leftBottom, yR) - 14;
+  ctx.y = lowest;
+  dLine(ctx, MX, ctx.y, PAGE_W - MX, ctx.y, 0.6, INK);
+  ctx.y -= 26;
 }
 
-function drawClientBlock(
+// "Cover plate": document type chip + client + project meta in a clean grid
+function drawCoverPlate(
   ctx: Ctx,
   opts: {
     clientName: string;
@@ -269,207 +260,317 @@ function drawClientBlock(
     quoteDate: Date;
     validUntil: Date;
     projectAddress?: string;
+    projectTitle: string;
   }
 ) {
   const { font, bold } = ctx;
-  ensure(ctx, 100);
-  const blockTop = ctx.y;
+  ensure(ctx, 130);
 
-  const GUTTER = 24;
-  const rightW = 220;
-  const leftW = CONTENT_W - rightW - GUTTER;
+  // Document-type chip
+  dText(ctx, "PREVENTIVO", MX, ctx.y, 8.5, bold, ACCENT);
+  ctx.y -= 14;
 
-  // LEFT — client
-  dText(ctx, "SPETT.LE", MX, blockTop, 7.5, bold, MUTED);
-  const nameLines = wrap(opts.clientName, bold, 14, leftW);
-  let ly = blockTop - 18;
-  for (const line of nameLines.slice(0, 2)) {
-    dText(ctx, line, MX, ly, 14, bold, NAVY);
-    ly -= 17;
+  // Project title — hero typography
+  const titleLines = wrap(opts.projectTitle, bold, 22, CONTENT_W);
+  for (const line of titleLines.slice(0, 3)) {
+    ensure(ctx, 28);
+    dText(ctx, line, MX, ctx.y - 22, 22, bold, INK);
+    ctx.y -= 26;
   }
-  if (opts.projectAddress) {
-    const lines = wrap(`Cantiere: ${opts.projectAddress}`, font, 9, leftW);
-    ly -= 2;
-    for (const line of lines.slice(0, 2)) {
-      dText(ctx, line, MX, ly, 9, font, MUTED);
-      ly -= 12;
+  ctx.y -= 6;
+
+  // 3-column meta strip
+  ensure(ctx, 60);
+  const colW = CONTENT_W / 3;
+  const labelY = ctx.y;
+  const valueY = labelY - 14;
+
+  const col = (i: number, label: string, value: string) => {
+    const x = MX + colW * i;
+    dText(ctx, label, x, labelY, 7, bold, MUTED);
+    const valLines = wrap(value, bold, 10, colW - 14);
+    let vy = valueY;
+    for (const line of valLines.slice(0, 2)) {
+      dText(ctx, line, x, vy, 10, bold, INK);
+      vy -= 13;
     }
-  }
-  const leftBottom = ly - 6;
+  };
+  col(0, "PREVENTIVO N.", opts.quoteNumber);
+  col(1, "DATA EMISSIONE", fmtDate(opts.quoteDate));
+  col(2, "VALIDITA' OFFERTA", fmtDate(opts.validUntil));
+  ctx.y -= 44;
 
-  // RIGHT — meta box
-  const boxX = PAGE_W - MX - rightW;
-  const rows: [string, string][] = [
-    ["Preventivo n.", opts.quoteNumber],
-    ["Data emissione", fmtDate(opts.quoteDate)],
-    ["Validita' offerta", fmtDate(opts.validUntil)],
-  ];
-  const boxH = rows.length * 20 + 16;
-  dRect(ctx, boxX, blockTop - boxH + 8, rightW, boxH, VERY_LIGHT);
-  let ry = blockTop - 6;
-  for (const [k, v] of rows) {
-    dText(ctx, k, boxX + 14, ry, 7.5, bold, MUTED);
-    dTextRight(ctx, v, boxX + rightW - 14, ry - 1, 9.5, bold, NAVY);
-    ry -= 20;
+  // Client panel
+  ensure(ctx, 70);
+  const panelTop = ctx.y;
+  const panelH = opts.projectAddress ? 64 : 48;
+  dRect(ctx, MX, panelTop - panelH, CONTENT_W, panelH, PANEL);
+  dRect(ctx, MX, panelTop - panelH, 3, panelH, ACCENT);
+  dText(ctx, "INTESTATO A", MX + 16, panelTop - 14, 7, bold, MUTED);
+  dText(ctx, opts.clientName, MX + 16, panelTop - 30, 13, bold, INK);
+  if (opts.projectAddress) {
+    dText(ctx, "CANTIERE", MX + CONTENT_W / 2 + 8, panelTop - 14, 7, bold, MUTED);
+    const addr = wrap(opts.projectAddress, font, 10, CONTENT_W / 2 - 24);
+    dText(ctx, addr[0] ?? "", MX + CONTENT_W / 2 + 8, panelTop - 30, 10, font, INK);
+    if (addr[1]) dText(ctx, addr[1], MX + CONTENT_W / 2 + 8, panelTop - 44, 10, font, INK);
   }
-  const rightBottom = blockTop - boxH;
-
-  ctx.y = Math.min(leftBottom, rightBottom) - 20;
+  ctx.y = panelTop - panelH - 22;
 }
 
-function drawTitleBlock(ctx: Ctx, q: QuoteContent) {
+// Executive summary: scope / duration / finish / investment
+function drawExecutiveSummary(ctx: Ctx, q: QuoteContent, vatPercent: number) {
   const { font, bold } = ctx;
+  ensure(ctx, 130);
 
-  const titleLines = wrap(q.title, bold, 13, CONTENT_W - 16);
-  const titleH = titleLines.length * 17;
-  ensure(ctx, titleH + 16);
+  dText(ctx, "SINTESI DELL'OFFERTA", MX, ctx.y, 8, bold, MUTED);
+  ctx.y -= 6;
+  dLine(ctx, MX, ctx.y, MX + 60, ctx.y, 1, ACCENT);
+  ctx.y -= 14;
 
-  dRect(ctx, MX, ctx.y - titleH - 4, 3, titleH + 8, GREEN);
-  let ty = ctx.y - 12;
-  for (const line of titleLines) {
-    dText(ctx, line, MX + 12, ty, 13, bold, NAVY);
-    ty -= 17;
-  }
-  ctx.y -= titleH + 14;
-
+  // Description (concise)
   if (q.description) {
-    const descLines = wrap(q.description, font, 9.5, CONTENT_W);
-    ensure(ctx, descLines.length * 13 + 6);
-    for (const line of descLines) {
-      dText(ctx, line, MX, ctx.y, 9.5, font, MUTED);
-      ctx.y -= 13;
+    const descLines = wrap(q.description, font, 10.5, CONTENT_W);
+    for (const line of descLines.slice(0, 3)) {
+      ensure(ctx, 14);
+      dText(ctx, line, MX, ctx.y, 10.5, font, TEXT);
+      ctx.y -= 14;
     }
     ctx.y -= 8;
   }
 
-  ensure(ctx, 36);
-  const colW = CONTENT_W / 2;
-  dText(ctx, "DURATA STIMATA", MX, ctx.y, 7, bold, MUTED);
-  dText(ctx, q.duration, MX, ctx.y - 14, 10, font, TEXT);
-  dText(ctx, "LIVELLO FINITURE", MX + colW, ctx.y, 7, bold, MUTED);
-  dText(ctx, q.finishLevel, MX + colW, ctx.y - 14, 10, font, TEXT);
-  ctx.y -= 38;
+  // 4-stat hero card with prominent total
+  ensure(ctx, 84);
+  const cardTop = ctx.y;
+  const cardH = 78;
+  dRect(ctx, MX, cardTop - cardH, CONTENT_W, cardH, NAVY);
+
+  const totale = q.total * (1 + vatPercent / 100);
+
+  // Left side: 3 small stats
+  const statCol = CONTENT_W * 0.55 / 3;
+  const drawStat = (i: number, label: string, value: string) => {
+    const x = MX + 18 + statCol * i;
+    dText(ctx, label, x, cardTop - 18, 7, bold, rgb(0.62, 0.7, 0.82));
+    const valLines = wrap(value, bold, 11, statCol - 10);
+    let vy = cardTop - 34;
+    for (const line of valLines.slice(0, 2)) {
+      dText(ctx, line, x, vy, 11, bold, WHITE);
+      vy -= 13;
+    }
+  };
+  drawStat(0, "AMBITO", q.sections.length === 1 ? "Intervento mirato" : "Intervento integrale");
+  drawStat(1, "DURATA STIMATA", q.duration);
+  drawStat(2, "LIVELLO FINITURE", q.finishLevel);
+
+  // Right side: TOTAL — dominant
+  const rightX = MX + CONTENT_W * 0.6;
+  dLine(ctx, rightX, cardTop - 14, rightX, cardTop - cardH + 14, 0.5, rgb(0.25, 0.32, 0.45));
+  dText(ctx, "INVESTIMENTO TOTALE", rightX + 14, cardTop - 18, 7, bold, rgb(0.62, 0.7, 0.82));
+  dTextRight(ctx, eur(totale), MX + CONTENT_W - 18, cardTop - 50, 24, bold, WHITE);
+  dTextRight(ctx, `IVA ${vatPercent}% inclusa`, MX + CONTENT_W - 18, cardTop - 64, 7.5, font, rgb(0.62, 0.7, 0.82));
+
+  ctx.y = cardTop - cardH - 24;
 }
 
+// Section header + items table with header row
 function drawSections(ctx: Ctx, q: QuoteContent) {
+  const { font, bold } = ctx;
+
+  // Section list title
+  ensure(ctx, 30);
+  dText(ctx, "DETTAGLIO LAVORAZIONI", MX, ctx.y, 8, bold, MUTED);
+  ctx.y -= 6;
+  dLine(ctx, MX, ctx.y, MX + 60, ctx.y, 1, ACCENT);
+  ctx.y -= 18;
+
+  // Table header
+  ensure(ctx, 22);
+  dText(ctx, "DESCRIZIONE", MX + 4, ctx.y, 7, bold, MUTED);
+  dTextRight(ctx, "IMPORTO", PAGE_W - MX - 4, ctx.y, 7, bold, MUTED);
+  ctx.y -= 6;
+  dLine(ctx, MX, ctx.y, PAGE_W - MX, ctx.y, 0.4, HAIRLINE);
+  ctx.y -= 12;
+
   q.sections.forEach((section, si) => {
-    const { font, bold } = ctx;
-    ensure(ctx, 60);
+    ensure(ctx, 50);
 
-    // Section header band
-    dRect(ctx, MX, ctx.y - 18, CONTENT_W, 22, VERY_LIGHT);
+    // Section title (no heavy band — quiet but clear)
     const num = String(si + 1).padStart(2, "0");
-    dText(ctx, num, MX + 10, ctx.y - 12, 10, bold, GREEN);
-    dText(ctx, section.name.toUpperCase(), MX + 32, ctx.y - 12, 9.5, bold, NAVY);
-    ctx.y -= 32;
+    dText(ctx, num, MX + 4, ctx.y, 9, bold, ACCENT);
+    dText(ctx, section.name.toUpperCase(), MX + 26, ctx.y, 9.5, bold, INK);
+    ctx.y -= 14;
+    dLine(ctx, MX + 26, ctx.y + 4, PAGE_W - MX, ctx.y + 4, 0.3, HAIRLINE);
+    ctx.y -= 4;
 
-    // Items
-    for (const item of section.items) {
-      const priceStr = `EUR ${fmtPrice(item.price)}`;
-      const priceW = bold.widthOfTextAtSize(priceStr, 9.5);
-      const nameMaxW = CONTENT_W - priceW - 30;
-      const nameLines = wrap(item.name, font, 9.5, nameMaxW);
-      const itemH = Math.max(nameLines.length * 13, 13) + 6;
-      ensure(ctx, itemH);
+    // Items — alternating zebra rows, single line where possible
+    section.items.forEach((item, ii) => {
+      const priceStr = eur(item.price);
+      const priceW = bold.widthOfTextAtSize(priceStr, 10);
+      const padX = 10;
+      const nameMaxW = CONTENT_W - priceW - padX * 2 - 8;
+      const nameLines = wrap(item.name, font, 10, nameMaxW);
+      const rowH = Math.max(nameLines.length * 13, 13) + 10;
+      ensure(ctx, rowH + 2);
 
-      let ily = ctx.y;
+      const rowTop = ctx.y + 4;
+      if (ii % 2 === 0) {
+        dRect(ctx, MX, rowTop - rowH, CONTENT_W, rowH, ZEBRA);
+      }
+
+      let ily = rowTop - 14;
       let first = true;
       for (const line of nameLines) {
-        dText(ctx, line, MX + 10, ily, 9.5, font, TEXT);
+        dText(ctx, line, MX + padX, ily, 10, font, TEXT);
         if (first) {
-          dTextRight(ctx, priceStr, PAGE_W - MX - 4, ily, 9.5, bold, TEXT);
+          dTextRight(ctx, priceStr, PAGE_W - MX - padX, ily, 10, bold, INK);
           first = false;
         }
         ily -= 13;
       }
-      dLine(ctx, MX + 10, ily + 6, PAGE_W - MX - 4, ily + 6, 0.3, LIGHT);
-      ctx.y = ily - 2;
-    }
+      ctx.y = rowTop - rowH;
+    });
 
-    // Subtotal
-    ensure(ctx, 24);
-    ctx.y -= 6;
-    dText(ctx, "Subtotale sezione", MX + 10, ctx.y, 8.5, font, MUTED);
-    dTextRight(ctx, `EUR ${fmtPrice(section.subtotal)}`, PAGE_W - MX - 4, ctx.y, 10, bold, NAVY);
-    ctx.y -= 24;
+    // Subtotal — strong rule + bold
+    ensure(ctx, 32);
+    ctx.y -= 4;
+    dLine(ctx, MX, ctx.y + 6, PAGE_W - MX, ctx.y + 6, 0.6, INK);
+    dText(ctx, `Subtotale ${section.name}`.toUpperCase(), MX + 4, ctx.y - 6, 8, bold, MUTED);
+    dTextRight(ctx, eur(section.subtotal), PAGE_W - MX - 4, ctx.y - 7, 11, bold, INK);
+    // Breathing room between sections (last section ends naturally before totals)
+    ctx.y -= si === q.sections.length - 1 ? 28 : 36;
   });
 }
 
+// Hero totals — full width, generous, clearly the conclusion
 function drawTotals(ctx: Ctx, q: QuoteContent, vatPercent: number) {
   const imponibile = q.total;
   const iva = imponibile * (vatPercent / 100);
   const totale = imponibile + iva;
-
-  const boxW = 280;
-  const boxH = 100;
-  ensure(ctx, boxH + 12);
-
   const { font, bold } = ctx;
-  const boxX = PAGE_W - MX - boxW;
-  const boxY = ctx.y - boxH;
 
-  dRect(ctx, boxX, boxY, boxW, boxH, NAVY);
+  ensure(ctx, 130);
+  ctx.y -= 4;
 
-  const rowL = (label: string, value: string, yy: number) => {
-    dText(ctx, label, boxX + 16, yy, 9, font, rgb(0.78, 0.82, 0.88));
-    dTextRight(ctx, value, boxX + boxW - 16, yy, 10, bold, WHITE);
-  };
-  rowL("Imponibile", `EUR ${fmtPrice(imponibile)}`, boxY + boxH - 22);
-  rowL(`IVA ${vatPercent}%`, `EUR ${fmtPrice(iva)}`, boxY + boxH - 42);
+  // Imponibile + IVA on light strip
+  const lightH = 56;
+  const stripTop = ctx.y;
+  dRect(ctx, MX, stripTop - lightH, CONTENT_W, lightH, PANEL);
 
-  dLine(ctx, boxX + 16, boxY + boxH - 52, boxX + boxW - 16, boxY + boxH - 52, 0.5, rgb(0.32, 0.38, 0.5));
+  dText(ctx, "IMPONIBILE", MX + 18, stripTop - 18, 7.5, bold, MUTED);
+  dTextRight(ctx, eur(imponibile), MX + CONTENT_W / 2 - 12, stripTop - 36, 13, bold, INK);
 
-  dText(ctx, "TOTALE", boxX + 16, boxY + 20, 11, bold, WHITE);
-  dTextRight(ctx, `EUR ${fmtPrice(totale)}`, boxX + boxW - 16, boxY + 16, 16, bold, GREEN);
+  dLine(ctx, MX + CONTENT_W / 2, stripTop - 12, MX + CONTENT_W / 2, stripTop - lightH + 12, 0.4, HAIRLINE);
 
-  ctx.y = boxY - 24;
+  dText(ctx, `IVA ${vatPercent}%`, MX + CONTENT_W / 2 + 14, stripTop - 18, 7.5, bold, MUTED);
+  dTextRight(ctx, eur(iva), MX + CONTENT_W - 18, stripTop - 36, 13, bold, INK);
+
+  ctx.y = stripTop - lightH;
+
+  // Big total bar
+  const totalH = 60;
+  const totalTop = ctx.y;
+  dRect(ctx, MX, totalTop - totalH, CONTENT_W, totalH, INK);
+  dText(ctx, "TOTALE OFFERTA", MX + 18, totalTop - 22, 9, bold, rgb(0.65, 0.72, 0.85));
+  dText(ctx, "IVA inclusa", MX + 18, totalTop - 38, 7.5, font, rgb(0.55, 0.62, 0.75));
+  dTextRight(ctx, eur(totale), PAGE_W - MX - 18, totalTop - 38, 26, bold, WHITE);
+
+  ctx.y = totalTop - totalH - 24;
 }
 
 function drawNotesAndTerms(ctx: Ctx, q: QuoteContent, terms: string | null) {
   const { font, bold } = ctx;
 
-  if (q.notes && q.notes.length > 0) {
-    ensure(ctx, 28);
-    dText(ctx, "NOTE", MX, ctx.y, 8.5, bold, NAVY);
+  // Default notes if AI didn't provide good ones
+  const defaultNotes = [
+    "Prezzi espressi in Euro, IVA esclusa salvo dove diversamente indicato.",
+    "Eventuali varianti in corso d'opera saranno contabilizzate previa accettazione scritta.",
+    "Tempi di esecuzione indicativi, soggetti a verifica in fase esecutiva.",
+    "L'offerta non comprende lavorazioni non espressamente menzionate.",
+  ];
+  const notes = q.notes && q.notes.length >= 3 ? q.notes : defaultNotes;
+
+  if (notes.length > 0) {
+    ensure(ctx, 30);
+    dText(ctx, "NOTE E CONDIZIONI", MX, ctx.y, 8, bold, MUTED);
+    ctx.y -= 6;
+    dLine(ctx, MX, ctx.y, MX + 60, ctx.y, 1, ACCENT);
     ctx.y -= 16;
-    q.notes.forEach((note, i) => {
-      const lines = wrap(`${i + 1}. ${note}`, font, 8.5, CONTENT_W);
-      ensure(ctx, lines.length * 12 + 4);
+
+    notes.forEach((note, i) => {
+      const num = String(i + 1).padStart(2, "0");
+      const indent = 26;
+      const lines = wrap(note, font, 9, CONTENT_W - indent);
+      ensure(ctx, lines.length * 12 + 6);
+      dText(ctx, num, MX, ctx.y, 8, bold, ACCENT);
+      let ly = ctx.y;
       for (const line of lines) {
-        dText(ctx, line, MX, ctx.y, 8.5, font, MUTED);
-        ctx.y -= 12;
+        dText(ctx, line, MX + indent, ly, 9, font, TEXT);
+        ly -= 12;
       }
-      ctx.y -= 3;
+      ctx.y = ly - 4;
     });
-    ctx.y -= 12;
+    ctx.y -= 10;
   }
 
   if (terms && terms.trim()) {
     ensure(ctx, 30);
-    dText(ctx, "CONDIZIONI CONTRATTUALI", MX, ctx.y, 8.5, bold, NAVY);
-    ctx.y -= 16;
+    dText(ctx, "CONDIZIONI CONTRATTUALI", MX, ctx.y, 8, bold, MUTED);
+    ctx.y -= 6;
+    dLine(ctx, MX, ctx.y, MX + 60, ctx.y, 1, ACCENT);
+    ctx.y -= 14;
     const lines = wrap(terms, font, 8.5, CONTENT_W);
     for (const line of lines) {
       ensure(ctx, 12);
-      dText(ctx, line, MX, ctx.y, 8.5, font, MUTED);
+      dText(ctx, line, MX, ctx.y, 8.5, font, TEXT);
       ctx.y -= 12;
     }
-    ctx.y -= 12;
+    ctx.y -= 10;
   }
 }
 
-function drawSignature(ctx: Ctx) {
-  const { bold } = ctx;
-  ensure(ctx, 80);
-  ctx.y -= 10;
+function drawAcceptance(ctx: Ctx, studio: StudioRow) {
+  const { font, bold } = ctx;
+  ensure(ctx, 130);
+  ctx.y -= 6;
+
+  dText(ctx, "ACCETTAZIONE", MX, ctx.y, 8, bold, MUTED);
+  ctx.y -= 6;
+  dLine(ctx, MX, ctx.y, MX + 60, ctx.y, 1, ACCENT);
+  ctx.y -= 18;
+
+  // Acceptance statement
+  const stmt =
+    "Per accettazione integrale dei termini economici e tecnici riportati nel presente preventivo, il Cliente sottoscrive di seguito.";
+  const lines = wrap(stmt, font, 9, CONTENT_W);
+  for (const line of lines) {
+    dText(ctx, line, MX, ctx.y, 9, font, TEXT);
+    ctx.y -= 12;
+  }
+  ctx.y -= 18;
+
+  // Two signature columns
   const colW = (CONTENT_W - 40) / 2;
-  const drawBox = (x: number, label: string) => {
-    dLine(ctx, x, ctx.y - 30, x + colW, ctx.y - 30, 0.6, TEXT);
-    dText(ctx, label, x, ctx.y - 44, 7, bold, MUTED);
-  };
-  drawBox(MX, "PER ACCETTAZIONE - DATA E FIRMA DEL CLIENTE");
-  drawBox(MX + colW + 40, "LO STUDIO");
-  ctx.y -= 64;
+  const sigTop = ctx.y;
+
+  // Place & date row above signatures
+  dText(ctx, "LUOGO E DATA", MX, sigTop, 7, bold, MUTED);
+  dLine(ctx, MX + 70, sigTop + 2, MX + colW, sigTop + 2, 0.5, INK);
+
+  ctx.y -= 36;
+  const lineY = ctx.y;
+
+  // Client signature
+  dLine(ctx, MX, lineY, MX + colW, lineY, 0.6, INK);
+  dText(ctx, "FIRMA DEL CLIENTE", MX, lineY - 12, 7, bold, MUTED);
+
+  // Studio signature
+  const sx = MX + colW + 40;
+  dLine(ctx, sx, lineY, sx + colW, lineY, 0.6, INK);
+  dText(ctx, "PER LO STUDIO", sx, lineY - 12, 7, bold, MUTED);
+  if (studio.architect_name) {
+    dText(ctx, studio.architect_name, sx, lineY - 24, 9, bold, INK);
+  }
+  ctx.y -= 50;
 }
 
 const inputSchema = z.object({
@@ -547,19 +648,22 @@ export const generateQuotePdf = createServerFn({ method: "POST" })
         now.getDate()
       ).padStart(2, "0")}-${String(Math.floor(Math.random() * 1000)).padStart(3, "0")}`;
 
-    drawClientBlock(ctx, {
+    const vatPercent = studio.default_vat_percent ?? 22;
+
+    drawCoverPlate(ctx, {
       clientName: data.clientName?.trim() || "Cliente",
       quoteNumber,
       quoteDate: now,
       validUntil,
       projectAddress: data.projectAddress,
+      projectTitle: data.quote.title,
     });
 
-    drawTitleBlock(ctx, data.quote);
+    drawExecutiveSummary(ctx, data.quote, vatPercent);
     drawSections(ctx, data.quote);
-    drawTotals(ctx, data.quote, studio.default_vat_percent ?? 22);
+    drawTotals(ctx, data.quote, vatPercent);
     drawNotesAndTerms(ctx, data.quote, studio.default_terms ?? null);
-    drawSignature(ctx);
+    drawAcceptance(ctx, studio);
 
     const total = pdf.getPageCount();
     for (let i = 0; i < total; i++) {
