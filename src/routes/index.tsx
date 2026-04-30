@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Mic, FileText, Zap, Clock, Users, CheckCircle2 } from "lucide-react";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { Reveal, RevealStagger, RevealItem } from "@/components/Reveal";
 import valoraLogo from "@/assets/valora-logo.png";
 
@@ -59,10 +59,9 @@ function ScrollNav() {
         className="relative max-w-6xl mx-auto flex items-center justify-between px-6"
       >
         <motion.div style={{ scale: logoScale }} className="flex items-center gap-3 origin-left">
-          <img src={valoraLogo} alt="Valora" className="h-20 md:h-28 w-auto" />
+          <img src={valoraLogo} alt="Valora" className="h-12 md:h-14 w-auto" />
         </motion.div>
-        <div className="flex items-center gap-4">
-          <ThemeToggle />
+        <div className="flex items-center gap-3">
           <Link
             to="/app"
             className="group inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]"

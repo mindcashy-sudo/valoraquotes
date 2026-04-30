@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, FileText, Trash2, Pencil, Eye, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
 import { QuoteEditor } from "@/components/QuoteEditor";
 import {
@@ -75,13 +75,12 @@ function SavedPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b border-border/50 px-6 py-5 md:py-6 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
+      <header className="border-b border-border/50 px-6 py-4 bg-background/85 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link to="/app" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link to="/app" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-            <img src={valoraLogo} alt="Valora" className="h-20 md:h-28 w-auto" />
+            <img src={valoraLogo} alt="Valora" className="h-12 w-auto" />
           </Link>
-          <ThemeToggle />
         </div>
       </header>
 

@@ -4,7 +4,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { getStudioProfile } from "@/server/studio.functions";
 import { StudioProfileForm, type StudioProfile } from "@/components/StudioProfileForm";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { Users } from "lucide-react";
 import valoraLogo from "@/assets/valora-logo.png";
 
 export const Route = createFileRoute("/settings")({
@@ -51,7 +51,10 @@ function SettingsPage() {
             App
           </Link>
           <img src={valoraLogo} alt="Valora" className="h-12 w-auto" />
-          <ThemeToggle />
+          <Link to="/clients" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
+            <Users className="w-4 h-4" />
+            Clienti
+          </Link>
         </div>
       </header>
 
