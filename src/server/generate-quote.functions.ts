@@ -123,25 +123,26 @@ REGOLE STRETTE
    • Nessun errore aritmetico
 
 ═══════════════════════════════════════════
-CHECK INTERNO PRIMA DI RESTITUIRE
+CHECK INTERNO PRIMA DI RESTITUIRE (TUTTI OBBLIGATORI)
 ═══════════════════════════════════════════
-Verifica MENTALMENTE prima di output:
-  ☐ Tutti i valori sono arrotondati e realistici?
-  ☐ Nessuna voce è sottoprezzata rispetto al mercato italiano?
-  ☐ €/mq totale rientra nel benchmark per zona e tipologia?
-  ☐ Subtotali e totale matematicamente corretti?
+  ☐ Tutti i prezzi sono IMPONIBILE (NO IVA inclusa nelle voci)?
+  ☐ Nessuna nota contiene "IVA esclusa" / "oltre IVA" / "+ IVA"?
+  ☐ Ogni voce ha quantita' + unita' di misura coerenti?
+  ☐ €/mq totale rientra nel range di mercato per zona?
+  ☐ Nessun valore estremo (ne' underpricing ne' overpricing)?
+  ☐ Subtotali = somma esatta voci; total = somma esatta subtotali?
   ☐ Nessun arredo non richiesto?
-  ☐ Tutte le componenti del progetto sono coperte?
+  ☐ Un architetto invierebbe questo documento al cliente SENZA modifiche?
 Se anche solo UN check fallisce → CORREGGI prima di restituire.
 
 ═══════════════════════════════════════════
-NOTE FINALI (sempre incluse)
+NOTE FINALI (sempre incluse, coerenti con IVA INCLUSA nel totale)
 ═══════════════════════════════════════════
-  • Variabilità prezzi in fase esecutiva
-  • Dipendenza dalle scelte definitive dei materiali
-  • Esclusione lavori non menzionati
-  • Possibili imprevisti (stato impianti/strutture esistenti)
-  • IVA esclusa ove applicabile
+  • Importi comprensivi di IVA al 22% salvo diversa aliquota di legge
+  • Variabilita' prezzi in fase esecutiva sui materiali finali scelti
+  • Esclusione lavori non menzionati e oneri professionali esterni
+  • Possibili imprevisti su stato impianti/strutture esistenti
+  • Validita' offerta: 30 giorni dalla data di emissione
 
 OUTPUT: solo JSON valido conforme allo schema della tool. Nessun testo extra.`,
           },
