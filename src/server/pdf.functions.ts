@@ -139,7 +139,7 @@ function newPage(ctx: Ctx) {
   ctx.page = ctx.pdf.addPage([PAGE_W, PAGE_H]);
   ctx.pageIndex += 1;
   drawContinuationHeader(ctx);
-  ctx.y = PAGE_H - MT + 40; // continuation pages have smaller header
+  ctx.y = PAGE_H - 60; // slim header takes ~30pt, leave a little breathing room
 }
 function ensure(ctx: Ctx, needed: number) {
   if (ctx.y - needed < MB) newPage(ctx);
