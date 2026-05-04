@@ -63,9 +63,10 @@ Il tuo compito NON è generare testo: è SIMULARE LOGICA ECONOMICA REALE e produ
 ═══════════════════════════════════════════
 BENCHMARK DI MERCATO (OBBLIGATORI)
 ═══════════════════════════════════════════
-Ristrutturazione completa:
-  • Standard: €700–€1.000 / mq
-  • Milano / zone centrali / centro storico città principali: €900–€1.500 / mq
+Ristrutturazione completa (€/mq, NETTO IVA):
+  • Standard / provincia: €700–€1.000 / mq
+  • Milano / Roma centro / centri storici principali: €900–€1.200 / mq (fascia media-alta)
+  • Top di gamma: €1.200–€1.500 / mq (solo se richiesto esplicitamente alto livello)
 Impianto elettrico: €80–€120 / mq
 Impianto idraulico: €70–€120 / mq
 Bagno completo (sanitari + rivestimenti + impianti + posa): €5.000–€12.000 cad
@@ -73,7 +74,16 @@ Cucina (solo adeguamento impianti + finiture pareti, NO mobili): €2.500–€5
 Pavimenti (fornitura + posa): €60–€150 / mq a seconda materiale
 Serramenti (finestre): €600–€1.200 cad; porte interne: €350–€700 cad
 
-Usa SEMPRE questi range come riferimento per il totale e per le singole voci.
+CONTROLLO RANGE FINALE (OBBLIGATORIO):
+- Calcola €/mq = total / mq dichiarati nel brief.
+- Per Milano: il valore DEVE rientrare in €900–€1.200/mq (salvo richiesta esplicita di alta gamma).
+- Se €/mq esce dal range → riproporzione TUTTE le voci moltiplicandole per (target/calcolato), arrotondando ogni valore al centinaio piu' vicino, poi ricalcola subtotali e totale.
+- NESSUN valore estremo: ne' underpricing ne' overpricing.
+
+UNITA' E LOGICA DI CALCOLO (OBBLIGATORIO):
+- Ogni voce DEVE finire con quantita' + unita' (mq, ml, cad, h, n, mc, kg).
+- Quantita' coerenti con i mq totali (es. pavimento ≤ mq totali).
+
 
 ═══════════════════════════════════════════
 REGOLE STRETTE
@@ -123,25 +133,26 @@ REGOLE STRETTE
    • Nessun errore aritmetico
 
 ═══════════════════════════════════════════
-CHECK INTERNO PRIMA DI RESTITUIRE
+CHECK INTERNO PRIMA DI RESTITUIRE (TUTTI OBBLIGATORI)
 ═══════════════════════════════════════════
-Verifica MENTALMENTE prima di output:
-  ☐ Tutti i valori sono arrotondati e realistici?
-  ☐ Nessuna voce è sottoprezzata rispetto al mercato italiano?
-  ☐ €/mq totale rientra nel benchmark per zona e tipologia?
-  ☐ Subtotali e totale matematicamente corretti?
+  ☐ Tutti i prezzi sono IMPONIBILE (NO IVA inclusa nelle voci)?
+  ☐ Nessuna nota contiene "IVA esclusa" / "oltre IVA" / "+ IVA"?
+  ☐ Ogni voce ha quantita' + unita' di misura coerenti?
+  ☐ €/mq totale rientra nel range di mercato per zona?
+  ☐ Nessun valore estremo (ne' underpricing ne' overpricing)?
+  ☐ Subtotali = somma esatta voci; total = somma esatta subtotali?
   ☐ Nessun arredo non richiesto?
-  ☐ Tutte le componenti del progetto sono coperte?
+  ☐ Un architetto invierebbe questo documento al cliente SENZA modifiche?
 Se anche solo UN check fallisce → CORREGGI prima di restituire.
 
 ═══════════════════════════════════════════
-NOTE FINALI (sempre incluse)
+NOTE FINALI (sempre incluse, coerenti con IVA INCLUSA nel totale)
 ═══════════════════════════════════════════
-  • Variabilità prezzi in fase esecutiva
-  • Dipendenza dalle scelte definitive dei materiali
-  • Esclusione lavori non menzionati
-  • Possibili imprevisti (stato impianti/strutture esistenti)
-  • IVA esclusa ove applicabile
+  • Importi comprensivi di IVA al 22% salvo diversa aliquota di legge
+  • Variabilita' prezzi in fase esecutiva sui materiali finali scelti
+  • Esclusione lavori non menzionati e oneri professionali esterni
+  • Possibili imprevisti su stato impianti/strutture esistenti
+  • Validita' offerta: 30 giorni dalla data di emissione
 
 OUTPUT: solo JSON valido conforme allo schema della tool. Nessun testo extra.`,
           },
