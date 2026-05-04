@@ -219,7 +219,7 @@ export function QuoteDisplay({ quote, defaultClientName, defaultProjectAddress }
                   Totale Preventivo
                 </span>
                 <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider mt-0.5">
-                  IVA esclusa ove applicabile
+                  Imponibile · IVA calcolata in PDF
                 </p>
               </div>
               <span className="text-2xl font-bold text-valora-green tabular-nums">
