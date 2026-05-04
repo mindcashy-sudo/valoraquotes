@@ -63,9 +63,10 @@ Il tuo compito NON è generare testo: è SIMULARE LOGICA ECONOMICA REALE e produ
 ═══════════════════════════════════════════
 BENCHMARK DI MERCATO (OBBLIGATORI)
 ═══════════════════════════════════════════
-Ristrutturazione completa:
-  • Standard: €700–€1.000 / mq
-  • Milano / zone centrali / centro storico città principali: €900–€1.500 / mq
+Ristrutturazione completa (€/mq, NETTO IVA):
+  • Standard / provincia: €700–€1.000 / mq
+  • Milano / Roma centro / centri storici principali: €900–€1.200 / mq (fascia media-alta)
+  • Top di gamma: €1.200–€1.500 / mq (solo se richiesto esplicitamente alto livello)
 Impianto elettrico: €80–€120 / mq
 Impianto idraulico: €70–€120 / mq
 Bagno completo (sanitari + rivestimenti + impianti + posa): €5.000–€12.000 cad
@@ -73,7 +74,16 @@ Cucina (solo adeguamento impianti + finiture pareti, NO mobili): €2.500–€5
 Pavimenti (fornitura + posa): €60–€150 / mq a seconda materiale
 Serramenti (finestre): €600–€1.200 cad; porte interne: €350–€700 cad
 
-Usa SEMPRE questi range come riferimento per il totale e per le singole voci.
+CONTROLLO RANGE FINALE (OBBLIGATORIO):
+- Calcola €/mq = total / mq dichiarati nel brief.
+- Per Milano: il valore DEVE rientrare in €900–€1.200/mq (salvo richiesta esplicita di alta gamma).
+- Se €/mq esce dal range → riproporzione TUTTE le voci moltiplicandole per (target/calcolato), arrotondando ogni valore al centinaio piu' vicino, poi ricalcola subtotali e totale.
+- NESSUN valore estremo: ne' underpricing ne' overpricing.
+
+UNITA' E LOGICA DI CALCOLO (OBBLIGATORIO):
+- Ogni voce DEVE finire con quantita' + unita' (mq, ml, cad, h, n, mc, kg).
+- Quantita' coerenti con i mq totali (es. pavimento ≤ mq totali).
+
 
 ═══════════════════════════════════════════
 REGOLE STRETTE
