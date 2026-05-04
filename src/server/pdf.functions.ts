@@ -447,17 +447,17 @@ function drawSections(ctx: Ctx, q: QuoteContent) {
   });
 }
 
-// ── Totals: the climax — Imponibile + IVA on light, then dominant dark TOTALE
+// ── Totals: Apple-clean — soft panel, generous spacing, single dominant number
 function drawTotals(ctx: Ctx, q: QuoteContent, vatPercent: number) {
   const imponibile = q.total;
   const iva = imponibile * (vatPercent / 100);
   const totale = imponibile + iva;
   const { font, bold } = ctx;
 
-  ensure(ctx, 160);
+  ensure(ctx, 180);
   ctx.y -= 4;
 
-  // Subtotal lines — pure typography, right aligned, no panel
+  // Subtotal lines — pure typography, right aligned
   const lineRow = (label: string, value: string, valueSize = 12) => {
     ensure(ctx, 22);
     dText(ctx, label.toUpperCase(), MX, ctx.y, 8, bold, MUTED);
@@ -469,29 +469,34 @@ function drawTotals(ctx: Ctx, q: QuoteContent, vatPercent: number) {
   lineRow("Imponibile", eur(imponibile));
   lineRow(`IVA  ${vatPercent}%`, eur(iva));
 
-  // Hero TOTAL bar — full width, dominant
-  ensure(ctx, 88);
-  ctx.y -= 8;
-  const totalH = 78;
+  // Hero TOTAL — Apple-style soft panel, light, with a subtle top hairline
+  ensure(ctx, 100);
+  ctx.y -= 12;
+  const totalH = 88;
   const totalTop = ctx.y;
-  dRect(ctx, MX, totalTop - totalH, CONTENT_W, totalH, INK);
-  dText(ctx, "TOTALE OFFERTA", MX + 22, totalTop - 26, 9, bold, rgb(0.6, 0.68, 0.82));
-  dText(ctx, "IVA inclusa", MX + 22, totalTop - 44, 8, font, rgb(0.55, 0.62, 0.75));
-  dTextRight(ctx, eur(totale), PAGE_W - MX - 22, totalTop - 48, 30, bold, WHITE);
+  dRect(ctx, MX, totalTop - totalH, CONTENT_W, totalH, PANEL);
+  dLine(ctx, MX, totalTop, PAGE_W - MX, totalTop, 0.6, INK);
+  dText(ctx, "TOTALE OFFERTA", MX + 24, totalTop - 28, 8, bold, MUTED);
+  dText(ctx, `IVA ${vatPercent}% inclusa`, MX + 24, totalTop - 46, 8, font, MUTED);
+  dTextRight(ctx, eur(totale), PAGE_W - MX - 24, totalTop - 54, 32, bold, INK);
 
   ctx.y = totalTop - totalH - 30;
 }
 
-function drawNotesAndTerms(ctx: Ctx, q: QuoteContent, terms: string | null) {
+function drawNotesAndTerms(ctx: Ctx, q: QuoteContent, terms: string | null, vatPercent: number) {
   const { font, bold } = ctx;
 
   const defaultNotes = [
-    "Prezzi espressi in Euro, IVA esclusa salvo dove diversamente indicato.",
+    `Importi espressi in Euro. Il totale indicato e' comprensivo di IVA al ${vatPercent}%.`,
     "Eventuali varianti in corso d'opera saranno contabilizzate previa accettazione scritta.",
     "Tempi di esecuzione indicativi, soggetti a verifica in fase esecutiva.",
     "L'offerta non comprende lavorazioni non espressamente menzionate.",
   ];
-  const notes = q.notes && q.notes.length >= 3 ? q.notes : defaultNotes;
+  // Filter out any AI-generated note that contradicts the VAT-inclusive total
+  const cleaned = (q.notes ?? []).filter(
+    (n) => !/iva\s+esclusa/i.test(n) && !/oltre\s+iva/i.test(n)
+  );
+  const notes = cleaned.length >= 3 ? cleaned : defaultNotes;
 
   if (notes.length > 0) {
     ensure(ctx, 50);
@@ -652,7 +657,7 @@ export const generateQuotePdf = createServerFn({ method: "POST" })
     drawExecutiveSummary(ctx, data.quote, vatPercent);
     drawSections(ctx, data.quote);
     drawTotals(ctx, data.quote, vatPercent);
-    drawNotesAndTerms(ctx, data.quote, studio.default_terms ?? null);
+    drawNotesAndTerms(ctx, data.quote, studio.default_terms ?? null, vatPercent);
     drawAcceptance(ctx, studio);
 
     const total = pdf.getPageCount();
