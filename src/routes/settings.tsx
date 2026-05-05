@@ -26,6 +26,8 @@ function SettingsPage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<StudioProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [subStatus, setSubStatus] = useState<string>("free");
+  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/login" });
@@ -36,7 +38,28 @@ function SettingsPage() {
     getStudioProfile()
       .then((res) => setProfile(res.profile as StudioProfile | null))
       .finally(() => setLoading(false));
+    supabase
+      .from("profiles")
+      .select("subscription_status")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setSubStatus(data?.subscription_status ?? "free"));
   }, [user]);
+
+  const handleManageBilling = async () => {
+    setPortalLoading(true);
+    try {
+      const res = await createCustomerPortalSession({ data: { origin: window.location.origin } });
+      if (res.url) window.location.href = res.url;
+      else toast.error(res.error ?? "Errore");
+    } catch {
+      toast.error("Impossibile aprire il pannello abbonamento");
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  const isPro = subStatus === "active" || subStatus === "trialing";
 
   if (authLoading || loading) {
     return (
