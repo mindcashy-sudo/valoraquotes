@@ -1,127 +1,171 @@
+## Obiettivo
 
-# Valora → SaaS vendibile per architetti freelance
-
-Obiettivo: un architetto deve poter (1) configurare il suo studio in 2 minuti, (2) generare un preventivo, (3) scaricare un PDF brandizzato pronto da inviare al cliente, (4) ritrovare tutto organizzato per cliente/progetto. Il piano è diviso in 4 fasi indipendenti — ognuna porta valore da sola.
-
----
-
-## Fase 1 — Profilo studio (personalizzazione)
-
-L'architetto, al primo accesso, configura una volta i suoi dati. Poi compaiono automaticamente in ogni preventivo e PDF.
-
-**Cosa fa l'utente:**
-- Imposta: nome studio, nome architetto, P.IVA, C.F., indirizzo, città, telefono, email, PEC, IBAN, n° iscrizione albo, logo.
-- Imposta default: zona di lavoro (influenza i benchmark prezzi), validità offerta in giorni, IVA %, condizioni standard.
-- Pagina `/settings` con tab "Studio", "Default preventivo", "Account".
-- Onboarding obbligatorio dopo signup (wizard 2 step) prima di poter generare il primo preventivo.
-
-**Effetti su preventivi:**
-- I dati studio entrano nel PDF (header).
-- La zona di lavoro viene passata al prompt AI come hint per i benchmark €/mq.
-- Le condizioni standard sono pre-caricate nelle "note" del preventivo generato.
+Finalizzare Valora come SaaS commercializzabile:
+1. **PDF preventivi** — riprogettato da zero con layout minimal stile Apple, zero testo tagliato, zero accavallamenti.
+2. **Stripe LIVE** — passaggio da sandbox a chiavi reali, **piano unico Early Access €29/mese**.
+3. **Polish commerciale** — pagina /pricing, gestione abbonamento (Customer Portal), badge Pro.
 
 ---
 
-## Fase 2 — Clienti e progetti
+## Parte 1 — Redesign PDF (priorità massima)
 
-L'architetto non gestisce "preventivi sciolti" ma clienti → progetti → preventivi (con revisioni).
+### Problemi attuali
+- Header pagina 1 con sidebar dark fissa 200pt + intro a destra → overflow su titoli lunghi.
+- `drawFooterBlock` disegna in coordinate assolute (sidebar dark da y=0 a y=230) **sovrapponendosi** alla tabella → causa delle "frasi tagliate".
+- Sidebar dark si ripete solo a pagina 1 ma il footer dark assume sempre pagina dedicata.
+- Zebra striping + chip colorati = troppo "HTML grezzo", non Apple.
 
-**Modello:**
+### Nuovo sistema (clean, Apple-style)
+
+**Filosofia**: tutto bianco, una sola colonna principale, gerarchia data dalla tipografia. Nessuna sidebar dark. Un solo accent (nero ink) per la barra del totale.
+
 ```text
-Cliente (Mario Rossi)
- └─ Progetto (Ristrutturazione via Roma 12)
-     ├─ Preventivo v1 (bozza)
-     ├─ Preventivo v2 (inviato)
-     └─ Preventivo v3 (accettato)
+┌──────────────────────────────────────────┐
+│  [logo]                      PREVENTIVO  │  ← header minimal 90pt
+│  Studio Nome                  N° 2026-01 │
+│  ─────────────────────────────────────── │
+│  Cliente              Cantiere           │
+│  Mario Rossi          Via Roma 12, MI    │
+│                                          │
+│  Ristrutturazione 95 mq                  │  ← title 24pt
+│  Descrizione muted...                    │
+│  Durata 12 sett · Finiture Medio-alto    │
+│                                          │
+│  ─────────────────────────────────────── │
+│  01  DEMOLIZIONI                         │
+│      Rimozione pavimenti        € 1.200  │
+│      Smontaggio sanitari          € 450  │
+│                      Subtotale  € 1.650  │
+│  ...                                     │
+│  ─────────────────────────────────────── │
+│                      Imponibile € 85.000 │
+│                       IVA 22%   € 18.700 │
+│  ████████████████████████████████████████│  ← TOTALE bar nero 70pt
+│  TOTALE              € 103.700 IVA incl. │
+│  ─────────────────────────────────────── │
+│  Note · Condizioni                       │
+│  • ...                                   │
+│  ─────────────────────────────────────── │
+│  Per accettazione         Per lo studio  │
+│  ___________________      _____________  │
+│  Studio · P.IVA · IBAN              1/3  │
+└──────────────────────────────────────────┘
 ```
 
-**Cosa fa l'utente:**
-- `/clients` — lista clienti con ricerca, "+ Nuovo cliente".
-- Scheda cliente: anagrafica + lista progetti.
-- Scheda progetto: indirizzo cantiere, mq, tipologia, note + lista preventivi con stato.
-- Ogni preventivo ha stato: `bozza`, `inviato`, `accettato`, `rifiutato`, numero progressivo automatico (`2026-001`), data, validità.
-- Quando genera un nuovo preventivo: prima sceglie cliente+progetto (o li crea al volo), poi registra/scrive.
-- La pagina `/saved` esistente diventa un "feed recenti"; la navigazione principale diventa Clienti.
+### Regole tipografiche
+- Helvetica + HelveticaBold.
+- Scala: 7.5 (eyebrow tracked) · 9 (body) · 10.5 (item) · 12 (subtotal) · 14 (meta) · 24 (project title) · 28 (TOTALE).
+- Colori: INK `(0.07,0.08,0.1)`, TEXT `(0.28,0.30,0.34)`, MUTED `(0.56,0.59,0.64)`, HAIRLINE `(0.90,0.92,0.94)`. **No zebra, no fondi colorati.**
+- Margini 56pt laterali, 60pt top, 80pt bottom.
+- Prezzi tabular nums right-aligned a `PAGE_W - MX`.
+
+### Riscrittura `src/server/pdf.functions.ts`
+Flusso lineare, ogni funzione avanza `ctx.y` e chiama `ensure()` PRIMA del blocco:
+
+```typescript
+drawHeader(ctx, logo, qNumber, qDate)
+drawMetaStrip(ctx, clientName, address, validUntil)
+drawProjectTitle(ctx, q)
+drawSections(ctx, q)              // hairline tra item, no zebra
+drawTotalsBlock(ctx, q, vat)      // imponibile + iva + BARRA NERA totale (intera, mai spezzata)
+drawNotesAndTerms(ctx, q, vat, terms)
+drawSignature(ctx, studio)
+drawPageFooter(everyPage, studio) // 1 riga finale + numero pagina
+```
+
+**Garanzie anti-overflow**:
+- Ogni `wrap()` usa `CONTENT_W - padding` reale.
+- `ensure(needed)` prima di OGNI blocco logico.
+- Barra TOTALE: `ensure(140)` → mai spezzata.
+- Signature: `ensure(80)` → mai spezzata.
+- `MB = 70` riservato per footer per-pagina.
+
+### QA obbligatorio
+Aggiornare `qa-render.mjs` con 3 scenari (corto/medio/lungo), `pdftoppm` → JPEG, ispezione di OGNI pagina per zero overlap/clipping. Iterare fino a clean.
 
 ---
 
-## Fase 3 — PDF preventivo professionale
+## Parte 2 — Stripe LIVE + piano €29/mese
 
-PDF pronto da inviare, non più "stampa browser".
+### Cosa c'è ora
+- Stripe in modalità **test/sandbox** (chiavi `sk_test_...`).
+- `STRIPE_PRICE_ID` è un price di test a €35/mese.
+- Webhook `/api/public/stripe-webhook` esistente, `STRIPE_WEBHOOK_SECRET` di test.
 
-**Layout PDF (1 file, multi-pagina A4):**
-- **Header**: logo studio sx, dati studio dx (nome, P.IVA, indirizzo, contatti).
-- **Blocco intestazione**: "Spett.le [Cliente]", indirizzo cliente, "Oggetto: [Progetto]", "Indirizzo cantiere", numero preventivo, data, validità ("Offerta valida fino al GG/MM/AAAA").
-- **Corpo**: titolo, descrizione, durata, livello finiture, sezioni con voci e subtotali (layout attuale ma in PDF nativo).
-- **Totali**: imponibile, IVA %, totale IVA inclusa.
-- **Condizioni**: modalità pagamento (acconto/SAL/saldo configurabile), tempi, garanzie, esclusioni, clausole. Editabili dall'architetto sia come default sia per singolo preventivo.
-- **Firma**: due box "Per accettazione cliente — data e firma" / "Lo studio". Spazio per firma manuale; in futuro link accettazione digitale (fuori scope ora).
-- **Footer**: dati fiscali studio, n° pagina, "Documento generato con Valora".
+### Cosa va fatto
 
-**Generazione:**
-- Server function `generate-pdf.functions.ts` che restituisce il PDF come `Response` (binario). L'utente clicca "Scarica PDF" → download diretto. Niente print del browser.
-- Libreria edge-compatible: **pdf-lib** (pura JS, funziona in Cloudflare Workers — confermato dalla knowledge base sui Server Runtime).
-- Logo studio caricato in Supabase Storage (bucket privato `studio-assets`), letto lato server.
-- Tasto "Stampa / PDF" attuale rimpiazzato da "Scarica PDF" + "Copia testo".
+**1. Creare in Stripe LIVE (manuale dall'utente, lato dashboard Stripe):**
+- Prodotto: **Valora — Early Access**
+- Prezzo ricorrente: **€29 / mese**, EUR
+- Endpoint webhook LIVE: `https://valoraquotes.lovable.app/api/public/stripe-webhook` (eventi: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`)
 
----
+**2. Aggiornare i 3 secrets esistenti con i valori LIVE** (richiederò all'utente con `add_secret`/`update_secret` quando inizio l'implementazione):
+- `STRIPE_SECRET_KEY` → `sk_live_...`
+- `STRIPE_PRICE_ID` → price ID del nuovo €29/mese live
+- `STRIPE_WEBHOOK_SECRET` → secret del webhook live
 
-## Fase 4 — Landing + conversione
+Niente codice da cambiare per il prezzo: il `PRICE_ID` è già letto dall'env. **Il piano resta unico (mensile €29)**.
 
-La landing attuale è bella ma generica. Va orientata alla vendita per architetti.
+**3. Aggiornare prezzo visualizzato nella UI** (da €35 → €29):
+- `src/components/Paywall.tsx` (riga "€35/mese")
+- Eventuali menzioni in landing/pricing
 
-**Modifiche:**
-- **Hero più specifico**: H1 "Preventivi professionali per architetti, in 2 minuti dalla voce." Sottotitolo che parla del dolore (3-4 ore a preventivo, perdere clienti per lentezza). CTA "Inizia gratis — 3 preventivi". CTA secondaria "Vedi un preventivo di esempio" → modale con PDF demo.
-- **Sezione "Come funziona"**: 3 step con screenshot (Registra → Genera → Scarica PDF brandizzato).
-- **Sezione "Per chi è"**: architetto freelance, geometra, piccolo studio.
-- **Sezione output di esempio**: anteprima del PDF reale brandizzato (non testo).
-- **Pricing trasparente in homepage**: card €35/mese Early Access con bullet (illimitati, PDF brandizzati, clienti/progetti, cancellazione libera). "Prezzo bloccato per i primi 100 utenti".
-- **FAQ**: come si fattura, posso esportare i miei dati (sì, sempre), serve installare nulla, supporta P.IVA estere, chi vede i miei dati.
-- **Prova sociale leggera**: spazio per 2-3 testimonial (placeholder per ora con label "Beta tester").
-- **Pagine separate** (richieste dalla guida TanStack): `/pricing`, `/come-funziona`, `/per-architetti`, `/faq` con head/meta dedicati per SEO. Link nel footer.
-- **Tracking conversione**: evento "signup", "first_quote_generated", "subscribed" via console + tabella `analytics_events` (per ora basta loggare lato server).
+**4. Customer Portal** (per permettere cancellazione/aggiornamento carta da soli):
+- Nuova server function `createCustomerPortalSession` in `src/server/stripe.functions.ts`:
+  ```typescript
+  const session = await stripe.billingPortal.sessions.create({
+    customer: customerId,
+    return_url: `${origin}/settings`,
+  });
+  ```
+- Bottone "Gestisci abbonamento" in `/settings` per utenti con `subscription_status = active`.
 
----
-
-## Dettagli tecnici (per riferimento)
-
-**Database — nuove tabelle:**
-- `studio_profiles` (1:1 con user): tutti i campi studio + logo_url + zona_default + iva_percent + validita_giorni_default + condizioni_default (jsonb). RLS: owner only.
-- `clients`: id, user_id, nome, email, telefono, indirizzo, citta, p_iva, cf, note. RLS: owner only.
-- `projects`: id, user_id, client_id, nome, indirizzo_cantiere, mq, tipologia, note, status. RLS: owner only.
-- Modifica `quotes`: aggiunta `project_id` (nullable per retrocompatibilità), `numero` (text), `status` (enum), `valid_until` (date), `iva_percent` (numeric). Backfill: i preventivi esistenti restano "sciolti", visibili in `/saved`.
-- `analytics_events`: id, user_id, event, props jsonb, created_at. Insert-only via RLS.
-- Storage bucket privato `studio-assets` per loghi.
-
-**Server functions nuove:**
-- `studio.functions.ts`: get/upsert profilo studio, upload logo (signed URL).
-- `clients.functions.ts`: CRUD clienti.
-- `projects.functions.ts`: CRUD progetti.
-- `quotes.functions.ts`: estesa con `project_id`, `status`, numerazione progressiva server-side.
-- `generate-pdf.functions.ts`: prende quote_id → restituisce PDF (pdf-lib, logo da storage, dati da studio_profiles).
-- `generate-quote.functions.ts`: passa `studio_profile.zona_default` come hint nel prompt AI.
-
-**Routing:**
-- `/onboarding` — wizard primo accesso
-- `/settings` (tab studio/default/account)
-- `/clients`, `/clients/$clientId`
-- `/projects/$projectId`
-- `/app` — flusso esistente, con selezione cliente/progetto prima di generare
-- `/pricing`, `/come-funziona`, `/per-architetti`, `/faq` — pagine marketing
-
-**Dipendenze nuove:** `pdf-lib`, `@pdf-lib/fontkit` (per font custom se serve). Entrambe pure-JS, edge-safe.
-
-**Pricing:** invariato (€35/mese illimitato), confermato.
+**5. Verifica webhook live**:
+- Dopo passaggio chiavi, fare un acquisto reale di test (carta vera, poi rimborsare) o usare `stripe trigger` per validare che i webhook LIVE arrivino e aggiornino `profiles.subscription_status`.
 
 ---
 
-## Ordine di esecuzione consigliato
+## Parte 3 — Polish commerciale finale
 
-Ogni fase è rilasciabile in modo indipendente. Suggerisco questa sequenza:
+**1. Nuova pagina `/pricing`** (`src/routes/pricing.tsx`):
+- Hero: "Prezzo trasparente. Cancelli quando vuoi."
+- 2 card: **Free** (3 preventivi) vs **Early Access €29/mese** (illimitati, PDF brandizzati, clienti, supporto).
+- Banner "Prezzo bloccato per i primi 100 utenti".
+- FAQ: fatturazione, cancellazione, esportazione dati.
+- CTA → checkout (signup + checkout).
 
-1. **Fase 1 (Studio)** — sblocca tutto il resto.
-2. **Fase 3 (PDF)** — è ciò che l'architetto vede e mostra al cliente: massimo valore percepito.
-3. **Fase 2 (Clienti/Progetti)** — organizzazione, fidelizza l'utente.
-4. **Fase 4 (Landing)** — quando il prodotto è davvero pronto da mostrare, allora vale spingere sull'acquisizione.
+**2. Landing `src/routes/index.tsx`**:
+- Aggiungere link "Prezzi" in nav.
+- Sezione pricing inline (1 card €29/mese) sopra il footer con CTA "Inizia gratis".
+- Aggiornare ogni "€35" → "€29".
 
-Posso partire in autonomia con le 4 fasi nell'ordine sopra, oppure dimmi tu se vuoi cambiare l'ordine o tagliare qualcosa.
+**3. Badge "Pro"** in `src/routes/app.tsx` per utenti con `subscription_status = active`.
+
+**4. Footer landing**: link Privacy / Termini / Contatti (placeholder se mancano).
+
+---
+
+## Ordine di esecuzione
+
+1. **Redesign PDF completo** + QA visivo iterativo (parte 1).
+2. **Switch Stripe LIVE**: richiedo i 3 secrets aggiornati + aggiungo Customer Portal + aggiorno prezzo €29 ovunque (parte 2).
+3. **Pagina /pricing + sezione landing + badge Pro** (parte 3).
+
+---
+
+## File toccati
+
+- `src/server/pdf.functions.ts` — **riscrittura completa**
+- `qa-render.mjs` — 3 scenari di QA
+- `src/server/stripe.functions.ts` — aggiunta `createCustomerPortalSession`
+- `src/components/Paywall.tsx` — €35 → €29
+- `src/routes/pricing.tsx` — **nuovo**
+- `src/routes/settings.tsx` — sezione "Abbonamento" con bottone Customer Portal
+- `src/routes/app.tsx` — badge Pro
+- `src/routes/index.tsx` — sezione pricing + nav + €29
+
+## Cosa farai TU manualmente prima/durante l'esecuzione
+
+1. In **Stripe Dashboard (modalità Live)**: crea Prodotto + Prezzo €29/mese ricorrente.
+2. In Stripe Dashboard: crea Webhook live verso `https://valoraquotes.lovable.app/api/public/stripe-webhook`.
+3. Mi passerai i 3 valori LIVE (`sk_live_...`, `price_...`, `whsec_...`) quando te li chiederò via prompt secret.
