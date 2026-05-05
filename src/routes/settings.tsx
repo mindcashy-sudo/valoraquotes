@@ -93,6 +93,36 @@ function SettingsPage() {
           </p>
         </div>
 
+        <div className="rounded-2xl border border-border bg-card p-6 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-valora-green/10 flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-valora-green" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold">Abbonamento</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {isPro ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-valora-green" />
+                    Early Access attivo · €29/mese
+                  </span>
+                ) : (
+                  "Piano Free · 3 preventivi gratuiti"
+                )}
+              </p>
+            </div>
+          </div>
+          {isPro ? (
+            <Button variant="outline" onClick={handleManageBilling} disabled={portalLoading}>
+              {portalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                <>Gestisci<ExternalLink className="w-3.5 h-3.5 ml-2" /></>
+              )}
+            </Button>
+          ) : (
+            <Button asChild><Link to="/app">Sblocca Pro</Link></Button>
+          )}
+        </div>
+
         <StudioProfileForm
           initial={profile}
           onSaved={(p) => setProfile(p)}
