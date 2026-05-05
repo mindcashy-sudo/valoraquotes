@@ -1,11 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, CreditCard, ExternalLink, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { getStudioProfile } from "@/server/studio.functions";
 import { StudioProfileForm, type StudioProfile } from "@/components/StudioProfileForm";
 import { Users } from "lucide-react";
 import valoraLogo from "@/assets/valora-logo.png";
+import { Button } from "@/components/ui/button";
+import { createCustomerPortalSession } from "@/server/stripe.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -22,6 +26,8 @@ function SettingsPage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<StudioProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [subStatus, setSubStatus] = useState<string>("free");
+  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/login" });
@@ -32,7 +38,28 @@ function SettingsPage() {
     getStudioProfile()
       .then((res) => setProfile(res.profile as StudioProfile | null))
       .finally(() => setLoading(false));
+    supabase
+      .from("profiles")
+      .select("subscription_status")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setSubStatus(data?.subscription_status ?? "free"));
   }, [user]);
+
+  const handleManageBilling = async () => {
+    setPortalLoading(true);
+    try {
+      const res = await createCustomerPortalSession({ data: { origin: window.location.origin } });
+      if (res.url) window.location.href = res.url;
+      else toast.error(res.error ?? "Errore");
+    } catch {
+      toast.error("Impossibile aprire il pannello abbonamento");
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  const isPro = subStatus === "active" || subStatus === "trialing";
 
   if (authLoading || loading) {
     return (
@@ -64,6 +91,36 @@ function SettingsPage() {
           <p className="text-sm text-muted-foreground mt-1">
             Questi dati compaiono in ogni preventivo PDF che generi.
           </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-6 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-valora-green/10 flex items-center justify-center">
+              <CreditCard className="w-5 h-5 text-valora-green" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold">Abbonamento</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {isPro ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-valora-green" />
+                    Early Access attivo · €29/mese
+                  </span>
+                ) : (
+                  "Piano Free · 3 preventivi gratuiti"
+                )}
+              </p>
+            </div>
+          </div>
+          {isPro ? (
+            <Button variant="outline" onClick={handleManageBilling} disabled={portalLoading}>
+              {portalLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (
+                <>Gestisci<ExternalLink className="w-3.5 h-3.5 ml-2" /></>
+              )}
+            </Button>
+          ) : (
+            <Button asChild><Link to="/app">Sblocca Pro</Link></Button>
+          )}
         </div>
 
         <StudioProfileForm
