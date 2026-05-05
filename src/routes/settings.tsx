@@ -1,11 +1,15 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, CreditCard, ExternalLink, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { getStudioProfile } from "@/server/studio.functions";
 import { StudioProfileForm, type StudioProfile } from "@/components/StudioProfileForm";
 import { Users } from "lucide-react";
 import valoraLogo from "@/assets/valora-logo.png";
+import { Button } from "@/components/ui/button";
+import { createCustomerPortalSession } from "@/server/stripe.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
