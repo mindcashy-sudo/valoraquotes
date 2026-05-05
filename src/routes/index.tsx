@@ -346,7 +346,7 @@ function LandingPage() {
           <Reveal>
             <div className="bg-card border-2 border-valora-green/40 rounded-3xl p-8 md:p-10 shadow-xl shadow-valora-green/5 max-w-md mx-auto">
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold tracking-tight">€35</span>
+                <span className="text-5xl font-bold tracking-tight">€29</span>
                 <span className="text-muted-foreground">/mese</span>
               </div>
               <p className="text-sm text-muted-foreground mt-2">Early Access · cancelli quando vuoi</p>

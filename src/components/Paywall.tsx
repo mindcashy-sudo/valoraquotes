@@ -74,7 +74,7 @@ export function Paywall({ count, limit }: { count: number; limit: number }) {
               Early Access · Prezzo bloccato
             </div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-4xl font-bold tracking-tight">€35</span>
+              <span className="text-4xl font-bold tracking-tight">€29</span>
               <span className="text-muted-foreground">/mese</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1.5">
