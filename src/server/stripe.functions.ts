@@ -117,6 +117,34 @@ export const syncCheckoutSession = createServerFn({ method: "POST" })
     return { isSubscribed, error: null };
   });
 
+export const createCustomerPortalSession = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { origin: string }) => ({
+    origin: String(input.origin || ""),
+  }))
+  .handler(async ({ data, context }) => {
+    const secret = process.env.STRIPE_SECRET_KEY;
+    if (!secret) return { url: null, error: "Stripe non configurato" };
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("stripe_customer_id")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    if (!profile?.stripe_customer_id) {
+      return { url: null, error: "Nessun abbonamento attivo da gestire" };
+    }
+
+    const stripe = new Stripe(secret);
+    const origin = data.origin || "https://valoraquotes.lovable.app";
+    const session = await stripe.billingPortal.sessions.create({
+      customer: profile.stripe_customer_id,
+      return_url: `${origin}/settings`,
+    });
+    return { url: session.url, error: null };
+  });
+
 export const syncCurrentStripeSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
