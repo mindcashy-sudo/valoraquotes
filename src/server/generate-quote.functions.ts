@@ -1,5 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+const FREE_LIMIT = 3;
 
 const inputSchema = z.object({
   transcription: z.string().min(1).max(2000),
@@ -7,8 +10,22 @@ const inputSchema = z.object({
 });
 
 export const generateQuote = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { transcription: string; workZone?: string }) => inputSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    // Server-side quota enforcement (free tier: FREE_LIMIT generations).
+    const [profileRes, countRes] = await Promise.all([
+      supabase.from("profiles").select("subscription_status").eq("id", userId).maybeSingle(),
+      supabase.from("quotes").select("id", { count: "exact", head: true }).eq("user_id", userId),
+    ]);
+    const isSubscribed = profileRes.data?.subscription_status === "active";
+    const count = countRes.count ?? 0;
+    if (!isSubscribed && count >= FREE_LIMIT) {
+      return { error: "Hai esaurito i preventivi gratuiti. Sblocca il piano per continuare." };
+    }
+
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
       return { error: "AI service not configured" };
