@@ -211,6 +211,11 @@ function AppPage() {
         setQuote(result.quote as QuoteData);
         setSaved(false);
         setStep("result");
+        if (!user) {
+          // Increment anonymous counter on successful generation.
+          const next = incAnonCount();
+          setCount(next);
+        }
       }
     } catch {
       setError("Qualcosa è andato storto. Riprova.");
@@ -219,23 +224,41 @@ function AppPage() {
   };
 
   const handleReset = async () => {
-    // Refresh status
-    const status = await getQuoteStatus();
-    setCount(status.count);
-    setIsSubscribed(status.isSubscribed);
-    if (!status.canGenerate) {
-      setStep("blocked");
+    if (user) {
+      const status = await getQuoteStatus();
+      setCount(status.count);
+      setIsSubscribed(status.isSubscribed);
+      if (!status.canGenerate) {
+        setStep("blocked");
+        return;
+      }
     } else {
-      setTranscription("");
-      setQuote(null);
-      setError("");
-      setSaved(false);
-      setStep("record");
+      const c = getAnonCount();
+      setCount(c);
+      if (c >= ANON_FREE_LIMIT) {
+        setStep("blocked");
+        return;
+      }
     }
+    setTranscription("");
+    setQuote(null);
+    setError("");
+    setSaved(false);
+    setStep("record");
   };
 
   const handleSave = async () => {
     if (!quote) return;
+    if (!user) {
+      try {
+        sessionStorage.setItem("valora_post_login", "save");
+      } catch {
+        /* noop */
+      }
+      toast.info("Accedi per salvare il preventivo nel tuo archivio.");
+      navigate({ to: "/login" });
+      return;
+    }
     const res = await saveQuoteFn({
       data: {
         quote,
