@@ -255,6 +255,15 @@ function SavedPage() {
           )}
         </div>
       </main>
+
+      {shareId && (
+        <ShareDialog
+          quoteId={shareId}
+          open={!!shareId}
+          onOpenChange={(v) => !v && setShareId(null)}
+          onChanged={refresh}
+        />
+      )}
     </div>
   );
 }
