@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Mic, FileText, Zap, Clock, Users, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Mic, FileText, Zap, Clock, Users, CheckCircle2, X, Share2, Eye, Building2, FolderArchive, ShieldCheck } from "lucide-react";
 import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 
 import { Reveal, RevealStagger, RevealItem } from "@/components/Reveal";
