@@ -101,6 +101,7 @@ function AppPage() {
           setLimit(ANON_FREE_LIMIT);
           setIsSubscribed(false);
           setStep(c < ANON_FREE_LIMIT ? "record" : "blocked");
+          setStatusLoading(false);
           return;
         }
 
