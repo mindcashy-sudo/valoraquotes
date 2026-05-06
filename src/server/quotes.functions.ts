@@ -40,7 +40,9 @@ export const listQuotes = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const { data, error } = await supabase
       .from("quotes")
-      .select("id, content, created_at")
+      .select(
+        "id, content, created_at, share_status, view_count, public_token, accepted_at, rejected_at",
+      )
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
     if (error) return { quotes: [], error: error.message };
