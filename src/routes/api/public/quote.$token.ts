@@ -124,16 +124,18 @@ export const Route = createFileRoute("/api/public/quote/$token")({
         }
 
         const now = new Date().toISOString();
-        const update: Record<string, unknown> = {
-          client_message: body.message?.slice(0, 1000) ?? null,
-        };
-        if (action === "accept") {
-          update.share_status = "accepted";
-          update.accepted_at = now;
-        } else {
-          update.share_status = "rejected";
-          update.rejected_at = now;
-        }
+        const update =
+          action === "accept"
+            ? {
+                share_status: "accepted",
+                accepted_at: now,
+                client_message: body.message?.slice(0, 1000) ?? null,
+              }
+            : {
+                share_status: "rejected",
+                rejected_at: now,
+                client_message: body.message?.slice(0, 1000) ?? null,
+              };
 
         const { error } = await supabaseAdmin
           .from("quotes")
