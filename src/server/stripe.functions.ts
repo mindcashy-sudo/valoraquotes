@@ -138,11 +138,17 @@ export const createCustomerPortalSession = createServerFn({ method: "POST" })
 
     const stripe = new Stripe(secret);
     const origin = data.origin || "https://valoraquotes.lovable.app";
-    const session = await stripe.billingPortal.sessions.create({
-      customer: profile.stripe_customer_id,
-      return_url: `${origin}/settings`,
-    });
-    return { url: session.url, error: null };
+    try {
+      const session = await stripe.billingPortal.sessions.create({
+        customer: profile.stripe_customer_id,
+        return_url: `${origin}/settings`,
+      });
+      return { url: session.url, error: null };
+    } catch (e: any) {
+      console.error("[customer-portal] Stripe error:", e?.message, e?.raw);
+      const msg = e?.raw?.message || e?.message || "Errore Stripe";
+      return { url: null, error: msg };
+    }
   });
 
 export const syncCurrentStripeSubscription = createServerFn({ method: "POST" })
