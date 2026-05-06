@@ -50,6 +50,7 @@ function SavedPage() {
   const [selected, setSelected] = useState<RemoteQuote | null>(null);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [shareId, setShareId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/login" });
