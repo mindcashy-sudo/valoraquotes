@@ -138,6 +138,86 @@ function LandingPage() {
         </motion.div>
       </section>
 
+      {/* Differential vs ChatGPT */}
+      <section className="py-20 md:py-28 px-6 border-t border-border/40">
+        <div className="max-w-5xl mx-auto">
+          <Reveal className="text-center mb-14">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-valora-green mb-3">
+              Una chat è una chat
+            </p>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-[1.1]">
+              Valora è il sistema operativo
+              <br />
+              <span className="text-muted-foreground">del tuo studio.</span>
+            </h2>
+            <p className="mt-6 text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              ChatGPT ti dà un testo. Valora ti dà un workflow: dal memo vocale al preventivo firmato dal cliente, con tracking, archivio e PDF brandizzato.
+            </p>
+          </Reveal>
+
+          <div className="grid md:grid-cols-2 gap-5 md:gap-6">
+            <Reveal y={20}>
+              <div className="relative bg-card border border-border rounded-3xl p-7 md:p-8 h-full">
+                <div className="flex items-center gap-2 mb-6">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    ChatGPT generico
+                  </span>
+                </div>
+                <ul className="space-y-4">
+                  {[
+                    "Risposte in chat, ogni volta diverse",
+                    "Nessun archivio clienti / progetti",
+                    "Nessun PDF brandizzato col tuo logo",
+                    "Nessun link condivisibile col cliente",
+                    "Nessun tracking aperture / accettazione",
+                    "Riparti da zero ad ogni preventivo",
+                  ].map((t) => (
+                    <li key={t} className="flex items-start gap-3 text-sm text-muted-foreground">
+                      <X className="w-4 h-4 mt-0.5 shrink-0 opacity-60" />
+                      <span>{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
+
+            <Reveal y={20}>
+              <div className="relative bg-card border-2 border-valora-green/40 rounded-3xl p-7 md:p-8 h-full shadow-xl shadow-valora-green/5">
+                <div className="absolute -top-3 left-7 bg-valora-green text-primary-foreground text-[10px] font-bold uppercase tracking-[0.16em] px-2.5 py-1 rounded-md">
+                  Valora
+                </div>
+                <div className="flex items-center gap-2 mb-6">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-valora-green">
+                    Sistema per studi
+                  </span>
+                </div>
+                <ul className="space-y-4">
+                  {[
+                    { icon: FileText, t: "Preventivo strutturato per sezioni, sempre uguale a sé stesso" },
+                    { icon: Building2, t: "PDF brandizzato col tuo logo, P.IVA, IBAN e condizioni" },
+                    { icon: Share2, t: "Link pubblico al cliente con accept/reject in un clic" },
+                    { icon: Eye, t: "Sai quando il cliente apre, quante volte, quando accetta" },
+                    { icon: FolderArchive, t: "Archivio clienti e progetti sempre a portata di mano" },
+                    { icon: ShieldCheck, t: "Dati tuoi, pronti per fattura, contratto e SAL" },
+                  ].map(({ icon: Icon, t }) => (
+                    <li key={t} className="flex items-start gap-3 text-sm">
+                      <Icon className="w-4 h-4 mt-0.5 shrink-0 text-valora-green" />
+                      <span className="text-foreground">{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </Reveal>
+          </div>
+
+          <Reveal className="mt-12 text-center">
+            <p className="text-sm text-muted-foreground italic max-w-xl mx-auto">
+              Il preventivo è il momento in cui un cliente decide se firmare. Non è il punto in cui vuoi affidarti a un copia-incolla da una chat.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
       {/* Problem */}
       <section className="py-20 md:py-28 px-6 border-t border-border/40">
         <div className="max-w-4xl mx-auto">
