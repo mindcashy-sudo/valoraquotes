@@ -465,8 +465,10 @@ function LandingPage() {
           </Reveal>
           <RevealStagger className="space-y-4" stagger={0.08}>
             {[
+              { q: "In cosa è diverso da ChatGPT?", a: "ChatGPT scrive testo. Valora costruisce il workflow: preventivo strutturato, PDF brandizzato, link pubblico al cliente con accept/reject, tracking aperture, archivio clienti e progetti. È un sistema per lo studio, non un chatbot." },
+              { q: "Posso condividere il preventivo col cliente con un link?", a: "Sì. Generi un link pubblico brandizzato col tuo logo: il cliente lo apre dal cellulare, vede il preventivo e clicca Accetto o Richiedi modifiche. Tu vedi quando lo apre e quando accetta." },
               { q: "I prezzi dei preventivi sono affidabili?", a: "Valora usa benchmark di mercato italiani aggiornati (€/mq, impianti, opere edili) e li adatta alla tua zona di lavoro. Restano sempre modificabili prima dell'invio." },
-              { q: "Posso usare il mio logo e i miei dati nei PDF?", a: "Sì. In Impostazioni studio carichi logo, P.IVA, IBAN e condizioni standard una volta sola: compaiono automaticamente in ogni PDF generato." },
+              { q: "Posso usare il mio logo e i miei dati nei PDF?", a: "Sì. In Impostazioni studio carichi logo, P.IVA, IBAN e condizioni standard una volta sola: compaiono automaticamente in ogni PDF generato e nei link pubblici." },
               { q: "Devo installare qualcosa?", a: "No. Valora funziona nel browser, da desktop e mobile. I dati restano nel tuo account." },
               { q: "Posso cancellare l'abbonamento?", a: "In qualsiasi momento, dal tuo account. Senza penali, senza vincoli." },
             ].map((f) => (
