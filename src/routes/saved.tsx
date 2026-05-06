@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, FileText, Trash2, Pencil, Eye, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, Trash2, Pencil, Eye, Loader2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
 import { QuoteEditor } from "@/components/QuoteEditor";
+import { ShareDialog } from "@/components/ShareDialog";
 import {
   listQuotes,
   deleteQuoteFn,
@@ -27,6 +28,11 @@ interface RemoteQuote {
   id: string;
   content: QuoteData;
   created_at: string;
+  share_status?: string;
+  view_count?: number;
+  public_token?: string | null;
+  accepted_at?: string | null;
+  rejected_at?: string | null;
 }
 
 function formatDate(iso: string) {
