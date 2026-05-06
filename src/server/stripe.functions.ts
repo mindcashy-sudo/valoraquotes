@@ -28,6 +28,37 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
       .maybeSingle();
 
     let customerId = profile?.stripe_customer_id ?? undefined;
+
+    // Validate that the stored customer exists in the CURRENT Stripe mode
+    // (test customers are invalid when the live key is used and vice versa).
+    if (customerId) {
+      try {
+        const existing = await stripe.customers.retrieve(customerId);
+        if ((existing as Stripe.DeletedCustomer).deleted) {
+          customerId = undefined;
+        }
+      } catch (err: any) {
+        const msg = String(err?.raw?.message || err?.message || "");
+        if (
+          err?.code === "resource_missing" ||
+          /No such customer/i.test(msg) ||
+          /similar object exists in (test|live) mode/i.test(msg)
+        ) {
+          customerId = undefined;
+          await supabaseAdmin
+            .from("profiles")
+            .update({
+              stripe_customer_id: null,
+              stripe_subscription_id: null,
+              subscription_status: "free",
+            })
+            .eq("id", userId);
+        } else {
+          throw err;
+        }
+      }
+    }
+
     if (!customerId) {
       const customer = await stripe.customers.create({
         email,
