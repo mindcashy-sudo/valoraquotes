@@ -152,7 +152,10 @@ export const Route = createFileRoute("/api/public/quote/$token")({
           .update(update)
           .eq("id", quote.id);
 
-        if (error) return new Response(error.message, { status: 500 });
+        if (error) {
+          console.error("[public-quote-action]:", error);
+          return new Response("Internal server error", { status: 500 });
+        }
         return Response.json({ ok: true });
       },
     },
