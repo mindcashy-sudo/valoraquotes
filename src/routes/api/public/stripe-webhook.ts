@@ -29,22 +29,22 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
       POST: async ({ request }) => {
         const secret = process.env.STRIPE_SECRET_KEY;
         const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-        if (!secret) return new Response("Stripe not configured", { status: 500 });
+        if (!secret || !webhookSecret) {
+          console.error("Stripe webhook misconfigured: missing STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET");
+          return new Response("Stripe not configured", { status: 500 });
+        }
 
         const stripe = new Stripe(secret);
         const sig = request.headers.get("stripe-signature");
+        if (!sig) return new Response("Missing signature", { status: 400 });
         const body = await request.text();
 
         let event: Stripe.Event;
         try {
-          if (webhookSecret && sig) {
-            event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
-          } else {
-            // Dev fallback — accept unsigned events when webhook secret is not yet set
-            event = JSON.parse(body) as Stripe.Event;
-          }
+          event = await stripe.webhooks.constructEventAsync(body, sig, webhookSecret);
         } catch (err) {
-          return new Response(`Invalid signature: ${(err as Error).message}`, { status: 400 });
+          console.error("Stripe webhook signature verification failed:", (err as Error).message);
+          return new Response("Invalid signature", { status: 400 });
         }
 
         try {
