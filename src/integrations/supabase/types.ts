@@ -110,39 +110,101 @@ export type Database = {
         }
         Relationships: []
       }
+      quote_views: {
+        Row: {
+          id: string
+          ip_hash: string | null
+          quote_id: string
+          user_agent: string | null
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          ip_hash?: string | null
+          quote_id: string
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          ip_hash?: string | null
+          quote_id?: string
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_views_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quotes: {
         Row: {
+          accepted_at: string | null
           client_id: string | null
+          client_message: string | null
           content: Json
           created_at: string
+          expires_at: string | null
+          first_viewed_at: string | null
           id: string
+          last_viewed_at: string | null
           project_address: string | null
+          public_token: string | null
           quote_number: string | null
+          rejected_at: string | null
+          share_status: string
+          shared_at: string | null
           status: string
           updated_at: string
           user_id: string
+          view_count: number
         }
         Insert: {
+          accepted_at?: string | null
           client_id?: string | null
+          client_message?: string | null
           content: Json
           created_at?: string
+          expires_at?: string | null
+          first_viewed_at?: string | null
           id?: string
+          last_viewed_at?: string | null
           project_address?: string | null
+          public_token?: string | null
           quote_number?: string | null
+          rejected_at?: string | null
+          share_status?: string
+          shared_at?: string | null
           status?: string
           updated_at?: string
           user_id: string
+          view_count?: number
         }
         Update: {
+          accepted_at?: string | null
           client_id?: string | null
+          client_message?: string | null
           content?: Json
           created_at?: string
+          expires_at?: string | null
+          first_viewed_at?: string | null
           id?: string
+          last_viewed_at?: string | null
           project_address?: string | null
+          public_token?: string | null
           quote_number?: string | null
+          rejected_at?: string | null
+          share_status?: string
+          shared_at?: string | null
           status?: string
           updated_at?: string
           user_id?: string
+          view_count?: number
         }
         Relationships: [
           {
