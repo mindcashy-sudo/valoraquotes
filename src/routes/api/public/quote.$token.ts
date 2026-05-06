@@ -45,6 +45,16 @@ export const Route = createFileRoute("/api/public/quote/$token")({
           .eq("user_id", quote.user_id)
           .maybeSingle();
 
+        // logo_url is stored as a storage path inside the private "studio-assets"
+        // bucket. Resolve a long-lived signed URL so the public page can render it.
+        let logoSignedUrl: string | null = null;
+        if (studio?.logo_url) {
+          const { data: signed } = await supabaseAdmin.storage
+            .from("studio-assets")
+            .createSignedUrl(studio.logo_url, 60 * 60 * 24 * 7); // 7 days
+          logoSignedUrl = signed?.signedUrl ?? null;
+        }
+
         const { data: client } = quote.client_id
           ? await supabaseAdmin
               .from("clients")
@@ -89,7 +99,7 @@ export const Route = createFileRoute("/api/public/quote/$token")({
             accepted_at: quote.accepted_at,
             rejected_at: quote.rejected_at,
           },
-          studio,
+          studio: studio ? { ...studio, logo_url: logoSignedUrl } : null,
           client,
         });
       },
