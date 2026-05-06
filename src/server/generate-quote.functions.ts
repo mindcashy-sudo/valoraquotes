@@ -146,12 +146,21 @@ CHECK INTERNO PRIMA DI RESTITUIRE (TUTTI OBBLIGATORI)
 Se anche solo UN check fallisce → CORREGGI prima di restituire.
 
 ═══════════════════════════════════════════
-NOTE FINALI (sempre incluse, coerenti con IVA INCLUSA nel totale)
+IVA (CRITICO)
 ═══════════════════════════════════════════
-  • Importi comprensivi di IVA al 22% salvo diversa aliquota di legge
+TUTTI i prezzi delle voci e i subtotali sono IMPONIBILI (NETTO IVA).
+L'IVA verra' applicata automaticamente in fase di rendering (PDF / link cliente)
+secondo l'aliquota dello studio. NON includere IVA nei prezzi delle voci.
+NON inserire la riga "IVA" nelle sezioni. NON sommare IVA nel total.
+
+═══════════════════════════════════════════
+NOTE FINALI (sempre incluse — IVA NON inclusa nel total)
+═══════════════════════════════════════════
+  • Importi al netto di IVA, applicata secondo aliquota di legge
   • Variabilita' prezzi in fase esecutiva sui materiali finali scelti
+  • Misure da verificare in cantiere prima dell'inizio lavori
   • Esclusione lavori non menzionati e oneri professionali esterni
-  • Possibili imprevisti su stato impianti/strutture esistenti
+  • Possibili varianti contabilizzate previa accettazione scritta
   • Validita' offerta: 30 giorni dalla data di emissione
 
 OUTPUT: solo JSON valido conforme allo schema della tool. Nessun testo extra.`,
@@ -259,6 +268,29 @@ OUTPUT: solo JSON valido conforme allo schema della tool. Nessun testo extra.`,
 
     try {
       const quote = JSON.parse(toolCall.function.arguments);
+
+      // ─────────────────────────────────────────────────────────
+      // MATH GUARANTEE: recompute subtotals & total from items.
+      // The AI is NEVER trusted for arithmetic. All prices are
+      // treated as IMPONIBILE (no VAT). VAT is applied at render.
+      // Each price is rounded to 2 decimals; subtotals/total are
+      // exact sums to avoid floating-point drift.
+      // ─────────────────────────────────────────────────────────
+      const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
+      if (Array.isArray(quote.sections)) {
+        let total = 0;
+        quote.sections = quote.sections.map((s: { name: string; items: Array<{ name: string; price: number }> }) => {
+          const items = (s.items ?? []).map((it) => ({
+            name: String(it.name ?? "").trim(),
+            price: round2(it.price),
+          }));
+          const subtotal = round2(items.reduce((sum, it) => sum + it.price, 0));
+          total = round2(total + subtotal);
+          return { name: s.name, items, subtotal };
+        });
+        quote.total = total;
+      }
+
       return { quote };
     } catch {
       return { error: "Failed to parse quote data." };
