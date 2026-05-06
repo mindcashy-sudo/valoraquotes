@@ -286,7 +286,7 @@ function AppPage() {
     [clients, selectedClientId]
   );
 
-  if (authLoading || !user || statusLoading || syncingPayment) {
+  if (authLoading || statusLoading || syncingPayment) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-6 text-center">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -296,6 +296,29 @@ function AppPage() {
       </div>
     );
   }
+
+  const handleUpgradeClick = async () => {
+    if (!user) {
+      try {
+        sessionStorage.setItem("valora_post_login", "checkout");
+      } catch {
+        /* noop */
+      }
+      navigate({ to: "/login" });
+      return;
+    }
+    setSyncingPayment(true);
+    try {
+      const res = await createCheckoutSession({ data: { origin: window.location.origin } });
+      if (res.url) {
+        window.location.href = res.url;
+        return;
+      }
+      toast.error(res.error || "Impossibile avviare il checkout");
+    } finally {
+      setSyncingPayment(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
