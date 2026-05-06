@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, FileText, Trash2, Pencil, Eye, Loader2 } from "lucide-react";
+import { ArrowLeft, FileText, Trash2, Pencil, Eye, Loader2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
 import { QuoteEditor } from "@/components/QuoteEditor";
+import { ShareDialog } from "@/components/ShareDialog";
 import {
   listQuotes,
   deleteQuoteFn,
@@ -27,6 +28,11 @@ interface RemoteQuote {
   id: string;
   content: QuoteData;
   created_at: string;
+  share_status?: string;
+  view_count?: number;
+  public_token?: string | null;
+  accepted_at?: string | null;
+  rejected_at?: string | null;
 }
 
 function formatDate(iso: string) {
@@ -44,6 +50,7 @@ function SavedPage() {
   const [selected, setSelected] = useState<RemoteQuote | null>(null);
   const [editing, setEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [shareId, setShareId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/login" });
@@ -116,7 +123,19 @@ function SavedPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {quotes.map((q) => (
+                  {quotes.map((q) => {
+                    const status = q.share_status ?? "private";
+                    const badge =
+                      status === "accepted"
+                        ? { label: "Accettato", cls: "bg-valora-green/15 text-valora-green" }
+                        : status === "viewed"
+                          ? { label: "Visto", cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400" }
+                          : status === "shared"
+                            ? { label: "Inviato", cls: "bg-blue-500/10 text-blue-600 dark:text-blue-400" }
+                            : status === "rejected"
+                              ? { label: "Rifiutato", cls: "bg-red-500/10 text-red-600 dark:text-red-400" }
+                              : null;
+                    return (
                     <div
                       key={q.id}
                       className="bg-card border border-border rounded-2xl p-5 flex items-center gap-4 hover:border-valora-green/40 transition-colors group"
@@ -128,7 +147,14 @@ function SavedPage() {
                         }}
                         className="flex-1 text-left min-w-0"
                       >
-                        <h3 className="font-semibold truncate">{q.content.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold truncate">{q.content.title}</h3>
+                          {badge && (
+                            <span className={`shrink-0 inline-flex px-2 py-0.5 rounded-md text-[10px] font-semibold ${badge.cls}`}>
+                              {badge.label}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground truncate mt-0.5">
                           {q.content.description}
                         </p>
@@ -138,8 +164,24 @@ function SavedPage() {
                           <span className="font-semibold text-valora-green tabular-nums">
                             € {q.content.total.toFixed(2)}
                           </span>
+                          {(q.view_count ?? 0) > 0 && (
+                            <>
+                              <span>·</span>
+                              <span className="inline-flex items-center gap-1">
+                                <Eye className="w-3 h-3" /> {q.view_count}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShareId(q.id)}
+                        title="Condividi col cliente"
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -159,7 +201,8 @@ function SavedPage() {
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
@@ -212,6 +255,15 @@ function SavedPage() {
           )}
         </div>
       </main>
+
+      {shareId && (
+        <ShareDialog
+          quoteId={shareId}
+          open={!!shareId}
+          onOpenChange={(v) => !v && setShareId(null)}
+          onChanged={refresh}
+        />
+      )}
     </div>
   );
 }
