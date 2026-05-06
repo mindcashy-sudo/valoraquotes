@@ -178,6 +178,24 @@ export const createCustomerPortalSession = createServerFn({ method: "POST" })
     } catch (e: any) {
       console.error("[customer-portal] Stripe error:", e?.message, e?.raw);
       const msg = e?.raw?.message || e?.message || "Errore Stripe";
+      if (
+        e?.code === "resource_missing" ||
+        /No such customer/i.test(msg) ||
+        /similar object exists in (test|live) mode/i.test(msg)
+      ) {
+        await supabaseAdmin
+          .from("profiles")
+          .update({
+            stripe_customer_id: null,
+            stripe_subscription_id: null,
+            subscription_status: "free",
+          })
+          .eq("id", context.userId);
+        return {
+          url: null,
+          error: "Abbonamento precedente in test. Effettua un nuovo checkout per attivare la versione live.",
+        };
+      }
       return { url: null, error: msg };
     }
   });
