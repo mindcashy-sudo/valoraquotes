@@ -1,171 +1,157 @@
-## Obiettivo
+## Tesi
+Una chatbot AI "sputa testo". Valora deve diventare il **sistema operativo del preventivo** per architetti italiani: dati reali, integrazioni col mondo fisico (catasto, listini, firme, banche), memoria del singolo studio, output che hanno valore legale e operativo. Più Valora viene usato, più diventa difficile uscirne (lock-in sano fatto di dati, listino personale, storico clienti, firme raccolte).
 
-Finalizzare Valora come SaaS commercializzabile:
-1. **PDF preventivi** — riprogettato da zero con layout minimal stile Apple, zero testo tagliato, zero accavallamenti.
-2. **Stripe LIVE** — passaggio da sandbox a chiavi reali, **piano unico Early Access €29/mese**.
-3. **Polish commerciale** — pagina /pricing, gestione abbonamento (Customer Portal), badge Pro.
+Obiettivo strategico: passare da "genera un preventivo" a "**chiudi il contratto e gestisci il cantiere**".
 
 ---
 
-## Parte 1 — Redesign PDF (priorità massima)
+## Le 4 cose che un Chatbot non può fare (e Valora sì)
 
-### Problemi attuali
-- Header pagina 1 con sidebar dark fissa 200pt + intro a destra → overflow su titoli lunghi.
-- `drawFooterBlock` disegna in coordinate assolute (sidebar dark da y=0 a y=230) **sovrapponendosi** alla tabella → causa delle "frasi tagliate".
-- Sidebar dark si ripete solo a pagina 1 ma il footer dark assume sempre pagina dedicata.
-- Zebra striping + chip colorati = troppo "HTML grezzo", non Apple.
+1. **Avere accesso a dati reali e aggiornati** (listini DEI, prezzari regionali, catasto, OAM/CCIAA).
+2. **Produrre artefatti con validità** (PDF firmati digitalmente, contratti, fatture pro-forma, marche da bollo, link di firma tracciabile).
+3. **Imparare dallo studio** (listino personale dell'architetto, storico cantieri reali, coefficienti di markup propri, foto di cantiere geolocalizzate).
+4. **Orchestrare il workflow** (CRM clienti, scadenziario, firma elettronica, pagamenti acconti, condivisione col committente, export verso software professionali).
 
-### Nuovo sistema (clean, Apple-style)
+Il piano qui sotto è organizzato per **fase** e **valore di lock-in**.
 
-**Filosofia**: tutto bianco, una sola colonna principale, gerarchia data dalla tipografia. Nessuna sidebar dark. Un solo accent (nero ink) per la barra del totale.
+---
+
+## Fase 1 — Le killer feature dei prossimi 60 giorni
+Cose che, da sole, giustificano i €29/mese e che un architetto non trova in ChatGPT.
+
+### 1.1 Listino personale dello studio (massima priorità)
+- L'architetto carica/incolla il proprio listino (CSV, Excel, anche foto del prezzario cartaceo via OCR).
+- Valora lo importa come **catalogo voci personali** con prezzo unitario, unità di misura, fornitore di riferimento.
+- Ogni preventivo successivo viene generato **prima** dal listino dello studio, **poi** integrato dall'AI per le voci mancanti.
+- Effetto: dopo 2 preventivi reali, il listino dello studio è dentro Valora. Cambiare strumento = ricostruire il listino. Lock-in fortissimo.
+
+### 1.2 Prezzari ufficiali italiani integrati
+- Importazione **Prezzario DEI**, **Prezzari regionali** (Lombardia, Lazio, Emilia-Romagna), **Tariffario CCIAA**.
+- Quando l'AI genera una voce, mostra di fianco: "DEI 2025 dice €X/mq, tu vuoi usare questo?".
+- Output: il preventivo cita la fonte ("voce conforme Prezzario Lombardia 2025 cod. E.01.10.20"). Per i cantieri pubblici e per i clienti diffidenti, è oro.
+
+### 1.3 Da preventivo a contratto firmato in un click
+- Generazione di **contratto d'opera** standard (template legale italiano) accanto al preventivo.
+- **Firma elettronica integrata** (FEA con OTP via SMS o link pubblico tracciato). Provider tipo Yousign / Namirial.
+- Stato del documento visibile in app: Inviato → Visualizzato → Firmato.
+- Notifica automatica all'architetto quando il cliente firma.
+
+### 1.4 Acconto online sul preventivo
+- Bottone "Versa acconto del 30%" nel link pubblico del preventivo. Pagamento via Stripe.
+- L'architetto vede in Valora: preventivo accettato + acconto incassato + ricevuta automatica.
+- Questo è il momento "wow" che nessuna chatbot può replicare: chiudi il deal **dentro** lo strumento.
+
+### 1.5 Link pubblico del preventivo (con branding studio)
+- Ogni preventivo ha un URL `valora.it/p/abc123` con anteprima brandizzata, accetta/rifiuta, commenti del cliente, download PDF.
+- Tracking: il cliente lo ha aperto? Quante volte? Quanto tempo? Notifica all'architetto.
+
+---
+
+## Fase 2 — Diventare indispensabile (giorni 60–120)
+
+### 2.1 OCR planimetrie e computo automatico
+- L'architetto trascina una **planimetria** (PDF / DWG export / foto). Valora estrae mq totali, mq per stanza, ml di pareti, n° aperture.
+- Da lì genera computo metrico realistico, non più "stima". Differenza enorme rispetto al chatbot.
+- Tecnicamente: pdf.js + visione (Gemini Pro Vision) + libreria CAD per DWG → backend.
+
+### 2.2 Storico cantieri = AI personalizzata
+- Ogni preventivo accettato diventa "training data privato": Valora impara il €/mq tipico **dello studio**, gli sconti applicati, le sezioni più frequenti.
+- Suggerimento contestuale: "Sui cantieri 80–100 mq tu mediamente fatturi €1.150/mq. Questo è a €980. Vuoi rivedere?".
+- Un chatbot non ha questa memoria longitudinale.
+
+### 2.3 Varianti, SAL e contabilità di cantiere
+- Una volta accettato il preventivo, l'architetto può creare **varianti in corso d'opera** (delta + giustificazione).
+- **Stato Avanzamento Lavori (SAL)**: spunti le voci completate, Valora calcola % completata e fattura corrispondente.
+- Output: report SAL in PDF, pronto per il committente o per la banca che eroga il mutuo.
+
+### 2.4 Modulo clienti potenziato (mini-CRM)
+- Già esiste `clients.tsx`. Espandere con: pipeline (Lead → Sopralluogo → Preventivo → Firmato → Cantiere → Chiuso), reminder automatici, log delle interazioni.
+- Email transazionali in dominio dello studio ("[email protected]").
+
+### 2.5 Esportazioni professionali
+- Export verso: **PriMus / Str Vision CPM** (formato PXP / IFC), **Excel computo metrico**, **CSV per commercialista**, **Sage / TeamSystem** per fatturazione.
+- Senza questa feature, lo studio "deve" comunque ribattere il preventivo nel suo software di sempre. Con questa feature, Valora diventa la **fonte unica**.
+
+---
+
+## Fase 3 — Moat di lungo periodo (giorni 120+)
+
+### 3.1 Marketplace fornitori e quotazioni reali
+- L'architetto chiede preventivo a **3 imprese reali** dentro Valora. Le imprese registrate ricevono un link, rispondono col loro prezzo.
+- Valora confronta + propone all'architetto la combinazione migliore.
+- Network effect: più studi ci sono, più imprese si iscrivono; più imprese, più valore per gli studi.
+
+### 3.2 Verifica catastale e visure integrate
+- Inserisci indirizzo cantiere → Valora recupera dati catastali (foglio/particella/subalterno), classe energetica, vincoli.
+- Allegato automatico al preventivo: estratto di mappa.
+- Integrazione con Visure Italia / Openapi.
+
+### 3.3 Conformità e compliance
+- Generazione automatica di:
+  - **CILA / SCIA** precompilata (dati del progetto già presenti).
+  - **POS / DUVRI** semplificato per cantieri sotto soglia.
+  - **Dichiarazione conformità impianti** (modello CEI 64-8 ecc.).
+- Un architetto stressato dalla burocrazia non lascia più Valora.
+
+### 3.4 App mobile per cantiere
+- Foto del cantiere geolocalizzata + datata → diario di cantiere automatico.
+- Voice memo durante il sopralluogo → trascrizione + creazione bozza preventivo.
+- Riconciliazione: foto del muro demolito = spunta voce "demolizione tramezzi".
+
+### 3.5 Collaborazione di studio
+- Più utenti per studio (titolare + collaboratori), permessi, commenti sui preventivi, revisioni con storico.
+- Templati di studio condivisi (intestazioni, condizioni contrattuali, sezioni preferite).
+
+### 3.6 Modulo "Dimostra il tuo valore al cliente"
+- PDF del preventivo include una pagina opzionale **"Perché questo costo"**: render before/after, riferimenti al prezzario ufficiale, esempi di cantieri analoghi.
+- Vende l'architetto, non solo il numero finale. Differenziale enorme dal "preventivo da chatbot".
+
+---
+
+## Quick-win che si possono fare in 1–2 settimane (anche prima della Fase 1)
+
+1. **Numeri preventivo + revisioni**: già parziale, completare con storico revisioni e diff.
+2. **Template di sezioni preferite per studio** (es. "il mio bagno tipo", "la mia ristrutturazione 100mq tipo").
+3. **Duplica preventivo** come base per il prossimo cliente.
+4. **Coefficienti di studio** (markup, sconto applicato) salvati nel profilo.
+5. **Branding PDF avanzato**: logo, colori, font, intestazione, IBAN, P.IVA, REA.
+6. **Email sending** dentro Valora con tracking apertura ("il cliente ha aperto il preventivo 3 volte").
+7. **Scadenza automatica** preventivo dopo 30 giorni con notifica.
+8. **Dashboard studio**: € fatturato in pipeline, % accettazione, tempo medio dalla creazione alla firma.
+
+---
+
+## Posizionamento di marketing (per copy landing/pricing)
+
+Tre frasi che chiariscono la differenza vs ChatGPT:
+
+- *"ChatGPT ti scrive un preventivo. Valora lo fa firmare, incassa l'acconto e lo trasforma in cantiere."*
+- *"L'AI inventa i prezzi. Valora usa il tuo listino, il prezzario regionale e lo storico dei tuoi cantieri."*
+- *"Una chat è una chat. Valora è il sistema operativo del tuo studio."*
+
+---
+
+## Ordine di esecuzione raccomandato
 
 ```text
-┌──────────────────────────────────────────┐
-│  [logo]                      PREVENTIVO  │  ← header minimal 90pt
-│  Studio Nome                  N° 2026-01 │
-│  ─────────────────────────────────────── │
-│  Cliente              Cantiere           │
-│  Mario Rossi          Via Roma 12, MI    │
-│                                          │
-│  Ristrutturazione 95 mq                  │  ← title 24pt
-│  Descrizione muted...                    │
-│  Durata 12 sett · Finiture Medio-alto    │
-│                                          │
-│  ─────────────────────────────────────── │
-│  01  DEMOLIZIONI                         │
-│      Rimozione pavimenti        € 1.200  │
-│      Smontaggio sanitari          € 450  │
-│                      Subtotale  € 1.650  │
-│  ...                                     │
-│  ─────────────────────────────────────── │
-│                      Imponibile € 85.000 │
-│                       IVA 22%   € 18.700 │
-│  ████████████████████████████████████████│  ← TOTALE bar nero 70pt
-│  TOTALE              € 103.700 IVA incl. │
-│  ─────────────────────────────────────── │
-│  Note · Condizioni                       │
-│  • ...                                   │
-│  ─────────────────────────────────────── │
-│  Per accettazione         Per lo studio  │
-│  ___________________      _____________  │
-│  Studio · P.IVA · IBAN              1/3  │
-└──────────────────────────────────────────┘
+Settimane 1-2  → Quick wins (template, duplica, branding PDF, dashboard)
+Settimane 3-6  → Fase 1.1 + 1.2 (listino studio + prezzari) → killer commerciale
+Settimane 7-10 → Fase 1.3 + 1.4 + 1.5 (firma + acconto + link pubblico) → chiusura deal in-app
+Settimane 11+  → Fase 2 (OCR planimetrie, AI personalizzata, SAL, esportazioni)
+Mese 4+        → Fase 3 (marketplace, catasto, compliance, mobile)
 ```
 
-### Regole tipografiche
-- Helvetica + HelveticaBold.
-- Scala: 7.5 (eyebrow tracked) · 9 (body) · 10.5 (item) · 12 (subtotal) · 14 (meta) · 24 (project title) · 28 (TOTALE).
-- Colori: INK `(0.07,0.08,0.1)`, TEXT `(0.28,0.30,0.34)`, MUTED `(0.56,0.59,0.64)`, HAIRLINE `(0.90,0.92,0.94)`. **No zebra, no fondi colorati.**
-- Margini 56pt laterali, 60pt top, 80pt bottom.
-- Prezzi tabular nums right-aligned a `PAGE_W - MX`.
-
-### Riscrittura `src/server/pdf.functions.ts`
-Flusso lineare, ogni funzione avanza `ctx.y` e chiama `ensure()` PRIMA del blocco:
-
-```typescript
-drawHeader(ctx, logo, qNumber, qDate)
-drawMetaStrip(ctx, clientName, address, validUntil)
-drawProjectTitle(ctx, q)
-drawSections(ctx, q)              // hairline tra item, no zebra
-drawTotalsBlock(ctx, q, vat)      // imponibile + iva + BARRA NERA totale (intera, mai spezzata)
-drawNotesAndTerms(ctx, q, vat, terms)
-drawSignature(ctx, studio)
-drawPageFooter(everyPage, studio) // 1 riga finale + numero pagina
-```
-
-**Garanzie anti-overflow**:
-- Ogni `wrap()` usa `CONTENT_W - padding` reale.
-- `ensure(needed)` prima di OGNI blocco logico.
-- Barra TOTALE: `ensure(140)` → mai spezzata.
-- Signature: `ensure(80)` → mai spezzata.
-- `MB = 70` riservato per footer per-pagina.
-
-### QA obbligatorio
-Aggiornare `qa-render.mjs` con 3 scenari (corto/medio/lungo), `pdftoppm` → JPEG, ispezione di OGNI pagina per zero overlap/clipping. Iterare fino a clean.
-
 ---
 
-## Parte 2 — Stripe LIVE + piano €29/mese
+## Dettagli tecnici (rapidi)
 
-### Cosa c'è ora
-- Stripe in modalità **test/sandbox** (chiavi `sk_test_...`).
-- `STRIPE_PRICE_ID` è un price di test a €35/mese.
-- Webhook `/api/public/stripe-webhook` esistente, `STRIPE_WEBHOOK_SECRET` di test.
+- **Listino studio**: tabella `studio_price_list` (studio_id, code, name, unit, unit_price, category). Import CSV/Excel via SheetJS, OCR via Gemini Vision.
+- **Prezzari ufficiali**: tabella read-only `public_price_books`, popolata via job di import; lookup full-text.
+- **Firma elettronica**: integrazione Yousign API (REST), webhook per stato. Secret `YOUSIGN_API_KEY`.
+- **Acconto online**: riuso Stripe già attivo; nuovo flusso `payment_intent` separato dall'abbonamento. Tabella `quote_payments`.
+- **Link pubblico**: route `/p/$token` con SSR, RLS open su token, view tracking via tabella `quote_views`.
+- **OCR planimetrie**: upload su Supabase Storage, server function chiama Gemini Pro Vision con prompt strutturato (output JSON: total_sqm, rooms[], walls_ml, openings).
+- **Multi-utente per studio**: tabella `studio_members` + ruoli, RLS via `has_studio_role(uid, studio_id, role)` security definer.
+- **Email tracking**: provider tipo Resend, pixel + redirect link.
 
-### Cosa va fatto
-
-**1. Creare in Stripe LIVE (manuale dall'utente, lato dashboard Stripe):**
-- Prodotto: **Valora — Early Access**
-- Prezzo ricorrente: **€29 / mese**, EUR
-- Endpoint webhook LIVE: `https://valoraquotes.lovable.app/api/public/stripe-webhook` (eventi: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`)
-
-**2. Aggiornare i 3 secrets esistenti con i valori LIVE** (richiederò all'utente con `add_secret`/`update_secret` quando inizio l'implementazione):
-- `STRIPE_SECRET_KEY` → `sk_live_...`
-- `STRIPE_PRICE_ID` → price ID del nuovo €29/mese live
-- `STRIPE_WEBHOOK_SECRET` → secret del webhook live
-
-Niente codice da cambiare per il prezzo: il `PRICE_ID` è già letto dall'env. **Il piano resta unico (mensile €29)**.
-
-**3. Aggiornare prezzo visualizzato nella UI** (da €35 → €29):
-- `src/components/Paywall.tsx` (riga "€35/mese")
-- Eventuali menzioni in landing/pricing
-
-**4. Customer Portal** (per permettere cancellazione/aggiornamento carta da soli):
-- Nuova server function `createCustomerPortalSession` in `src/server/stripe.functions.ts`:
-  ```typescript
-  const session = await stripe.billingPortal.sessions.create({
-    customer: customerId,
-    return_url: `${origin}/settings`,
-  });
-  ```
-- Bottone "Gestisci abbonamento" in `/settings` per utenti con `subscription_status = active`.
-
-**5. Verifica webhook live**:
-- Dopo passaggio chiavi, fare un acquisto reale di test (carta vera, poi rimborsare) o usare `stripe trigger` per validare che i webhook LIVE arrivino e aggiornino `profiles.subscription_status`.
-
----
-
-## Parte 3 — Polish commerciale finale
-
-**1. Nuova pagina `/pricing`** (`src/routes/pricing.tsx`):
-- Hero: "Prezzo trasparente. Cancelli quando vuoi."
-- 2 card: **Free** (3 preventivi) vs **Early Access €29/mese** (illimitati, PDF brandizzati, clienti, supporto).
-- Banner "Prezzo bloccato per i primi 100 utenti".
-- FAQ: fatturazione, cancellazione, esportazione dati.
-- CTA → checkout (signup + checkout).
-
-**2. Landing `src/routes/index.tsx`**:
-- Aggiungere link "Prezzi" in nav.
-- Sezione pricing inline (1 card €29/mese) sopra il footer con CTA "Inizia gratis".
-- Aggiornare ogni "€35" → "€29".
-
-**3. Badge "Pro"** in `src/routes/app.tsx` per utenti con `subscription_status = active`.
-
-**4. Footer landing**: link Privacy / Termini / Contatti (placeholder se mancano).
-
----
-
-## Ordine di esecuzione
-
-1. **Redesign PDF completo** + QA visivo iterativo (parte 1).
-2. **Switch Stripe LIVE**: richiedo i 3 secrets aggiornati + aggiungo Customer Portal + aggiorno prezzo €29 ovunque (parte 2).
-3. **Pagina /pricing + sezione landing + badge Pro** (parte 3).
-
----
-
-## File toccati
-
-- `src/server/pdf.functions.ts` — **riscrittura completa**
-- `qa-render.mjs` — 3 scenari di QA
-- `src/server/stripe.functions.ts` — aggiunta `createCustomerPortalSession`
-- `src/components/Paywall.tsx` — €35 → €29
-- `src/routes/pricing.tsx` — **nuovo**
-- `src/routes/settings.tsx` — sezione "Abbonamento" con bottone Customer Portal
-- `src/routes/app.tsx` — badge Pro
-- `src/routes/index.tsx` — sezione pricing + nav + €29
-
-## Cosa farai TU manualmente prima/durante l'esecuzione
-
-1. In **Stripe Dashboard (modalità Live)**: crea Prodotto + Prezzo €29/mese ricorrente.
-2. In Stripe Dashboard: crea Webhook live verso `https://valoraquotes.lovable.app/api/public/stripe-webhook`.
-3. Mi passerai i 3 valori LIVE (`sk_live_...`, `price_...`, `whsec_...`) quando te li chiederò via prompt secret.
+Tutto resta dentro Lovable Cloud (Supabase) + AI Gateway, niente nuovi vendor pesanti tranne Yousign (firma) e Resend (email).
