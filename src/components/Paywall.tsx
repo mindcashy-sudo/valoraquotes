@@ -2,12 +2,26 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, Check, Clock, ShieldCheck, Infinity as InfinityIcon } from "lucide-react";
 import { createCheckoutSession } from "@/server/stripe.functions";
+import { useAuth } from "@/lib/auth-context";
+import { useNavigate } from "@tanstack/react-router";
 
 export function Paywall({ count, limit }: { count: number; limit: number }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const handleUpgrade = async () => {
+    if (!user) {
+      // Anonymous: send to login with a flag, then continue to checkout after auth
+      try {
+        sessionStorage.setItem("valora_post_login", "checkout");
+      } catch {
+        /* noop */
+      }
+      navigate({ to: "/login" });
+      return;
+    }
     setLoading(true);
     setError("");
     try {
