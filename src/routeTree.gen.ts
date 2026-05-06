@@ -16,6 +16,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as ClientsClientIdRouteImport } from './routes/clients.$clientId'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 import { Route as ApiPublicQuoteTokenRouteImport } from './routes/api/public/quote.$token'
@@ -55,6 +56,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PTokenRoute = PTokenRouteImport.update({
+  id: '/p/$token',
+  path: '/p/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ClientsClientIdRoute = ClientsClientIdRouteImport.update({
   id: '/$clientId',
   path: '/$clientId',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
+  '/p/$token': typeof PTokenRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/quote/$token': typeof ApiPublicQuoteTokenRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
+  '/p/$token': typeof PTokenRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/quote/$token': typeof ApiPublicQuoteTokenRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
+  '/p/$token': typeof PTokenRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/api/public/quote/$token': typeof ApiPublicQuoteTokenRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/settings'
     | '/clients/$clientId'
+    | '/p/$token'
     | '/api/public/stripe-webhook'
     | '/api/public/quote/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/settings'
     | '/clients/$clientId'
+    | '/p/$token'
     | '/api/public/stripe-webhook'
     | '/api/public/quote/$token'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/settings'
     | '/clients/$clientId'
+    | '/p/$token'
     | '/api/public/stripe-webhook'
     | '/api/public/quote/$token'
   fileRoutesById: FileRoutesById
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   SavedRoute: typeof SavedRoute
   SettingsRoute: typeof SettingsRoute
+  PTokenRoute: typeof PTokenRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicQuoteTokenRoute: typeof ApiPublicQuoteTokenRoute
 }
@@ -210,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$token': {
+      id: '/p/$token'
+      path: '/p/$token'
+      fullPath: '/p/$token'
+      preLoaderRoute: typeof PTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/clients/$clientId': {
       id: '/clients/$clientId'
       path: '/$clientId'
@@ -253,9 +273,19 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   SavedRoute: SavedRoute,
   SettingsRoute: SettingsRoute,
+  PTokenRoute: PTokenRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicQuoteTokenRoute: ApiPublicQuoteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
