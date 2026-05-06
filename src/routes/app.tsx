@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings, Users, Sparkles, Lightbulb, Clock } from "lucide-react";
+import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings, Users, Sparkles, Lightbulb, Clock, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
@@ -8,7 +8,7 @@ import { QuoteEditor } from "@/components/QuoteEditor";
 import { Paywall } from "@/components/Paywall";
 import { generateQuote } from "@/server/generate-quote.functions";
 import { getQuoteStatus, saveQuoteFn, migrateLocalQuotes } from "@/server/quotes.functions";
-import { syncCheckoutSession, syncCurrentStripeSubscription } from "@/server/stripe.functions";
+import { syncCheckoutSession, syncCurrentStripeSubscription, createCheckoutSession } from "@/server/stripe.functions";
 import { getStudioProfile } from "@/server/studio.functions";
 import { listClients } from "@/server/clients.functions";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 import { getSavedQuotes } from "@/lib/quote-storage";
+import { getAnonCount, incAnonCount, ANON_FREE_LIMIT } from "@/lib/anon-quota";
 import valoraLogo from "@/assets/valora-logo.png";
 
 const EXAMPLE_PROMPTS = [
@@ -64,16 +65,46 @@ function AppPage() {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [projectAddress, setProjectAddress] = useState("");
 
-  // Auth guard
-  useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/login" });
-  }, [user, authLoading, navigate]);
+  // No auth guard: /app is open. Login is required only to save quotes/clients.
 
-  // Migrate localStorage quotes once + load status
+  // Post-login: if user came from "Abbonati" CTA while anonymous, resume checkout.
   useEffect(() => {
     if (!user) return;
+    let resume = false;
+    try {
+      resume = sessionStorage.getItem("valora_post_login") === "checkout";
+      if (resume) sessionStorage.removeItem("valora_post_login");
+    } catch {
+      /* noop */
+    }
+    if (resume) {
+      (async () => {
+        try {
+          const res = await createCheckoutSession({ data: { origin: window.location.origin } });
+          if (res.url) window.location.href = res.url;
+        } catch {
+          /* noop */
+        }
+      })();
+    }
+  }, [user]);
+
+  // Load status (logged-in) or initialize anonymous flow.
+  useEffect(() => {
+    if (authLoading) return;
     const run = async () => {
       try {
+        if (!user) {
+          // Anonymous flow: track quotes locally, no studio/onboarding.
+          const c = getAnonCount();
+          setCount(c);
+          setLimit(ANON_FREE_LIMIT);
+          setIsSubscribed(false);
+          setStep(c < ANON_FREE_LIMIT ? "record" : "blocked");
+          setStatusLoading(false);
+          return;
+        }
+
         // Check studio profile / onboarding
         const studioRes = await getStudioProfile();
         const studio = studioRes.profile;
@@ -148,7 +179,7 @@ function AppPage() {
       }
     };
     run();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleTranscription = (text: string) => {
     setTranscription(text);
@@ -180,6 +211,11 @@ function AppPage() {
         setQuote(result.quote as QuoteData);
         setSaved(false);
         setStep("result");
+        if (!user) {
+          // Increment anonymous counter on successful generation.
+          const next = incAnonCount();
+          setCount(next);
+        }
       }
     } catch {
       setError("Qualcosa è andato storto. Riprova.");
@@ -188,23 +224,41 @@ function AppPage() {
   };
 
   const handleReset = async () => {
-    // Refresh status
-    const status = await getQuoteStatus();
-    setCount(status.count);
-    setIsSubscribed(status.isSubscribed);
-    if (!status.canGenerate) {
-      setStep("blocked");
+    if (user) {
+      const status = await getQuoteStatus();
+      setCount(status.count);
+      setIsSubscribed(status.isSubscribed);
+      if (!status.canGenerate) {
+        setStep("blocked");
+        return;
+      }
     } else {
-      setTranscription("");
-      setQuote(null);
-      setError("");
-      setSaved(false);
-      setStep("record");
+      const c = getAnonCount();
+      setCount(c);
+      if (c >= ANON_FREE_LIMIT) {
+        setStep("blocked");
+        return;
+      }
     }
+    setTranscription("");
+    setQuote(null);
+    setError("");
+    setSaved(false);
+    setStep("record");
   };
 
   const handleSave = async () => {
     if (!quote) return;
+    if (!user) {
+      try {
+        sessionStorage.setItem("valora_post_login", "save");
+      } catch {
+        /* noop */
+      }
+      toast.info("Accedi per salvare il preventivo nel tuo archivio.");
+      navigate({ to: "/login" });
+      return;
+    }
     const res = await saveQuoteFn({
       data: {
         quote,
@@ -232,7 +286,7 @@ function AppPage() {
     [clients, selectedClientId]
   );
 
-  if (authLoading || !user || statusLoading || syncingPayment) {
+  if (authLoading || statusLoading || syncingPayment) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-6 text-center">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -242,6 +296,29 @@ function AppPage() {
       </div>
     );
   }
+
+  const handleUpgradeClick = async () => {
+    if (!user) {
+      try {
+        sessionStorage.setItem("valora_post_login", "checkout");
+      } catch {
+        /* noop */
+      }
+      navigate({ to: "/login" });
+      return;
+    }
+    setSyncingPayment(true);
+    try {
+      const res = await createCheckoutSession({ data: { origin: window.location.origin } });
+      if (res.url) {
+        window.location.href = res.url;
+        return;
+      }
+      toast.error(res.error || "Impossibile avviare il checkout");
+    } finally {
+      setSyncingPayment(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -253,59 +330,82 @@ function AppPage() {
             <img src={valoraLogo} alt="Valora" className="h-14 md:h-16 w-auto" />
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/clients">
-              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
-                <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">Clienti</span>
-              </Button>
-            </Link>
-            <Link to="/saved">
-              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
-                <FolderOpen className="w-4 h-4" />
-                <span className="hidden sm:inline">Salvati</span>
-              </Button>
-            </Link>
-            <Link to="/settings">
-              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
-                <Settings className="w-4 h-4" />
-                <span className="hidden sm:inline">Studio</span>
-              </Button>
-            </Link>
+            {user && (
+              <>
+                <Link to="/clients">
+                  <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
+                    <Users className="w-4 h-4" />
+                    <span className="hidden sm:inline">Clienti</span>
+                  </Button>
+                </Link>
+                <Link to="/saved">
+                  <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
+                    <FolderOpen className="w-4 h-4" />
+                    <span className="hidden sm:inline">Salvati</span>
+                  </Button>
+                </Link>
+                <Link to="/settings">
+                  <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
+                    <Settings className="w-4 h-4" />
+                    <span className="hidden sm:inline">Studio</span>
+                  </Button>
+                </Link>
+              </>
+            )}
             {isSubscribed ? (
               <span className="text-[10px] font-bold text-valora-green uppercase tracking-wider px-2.5 py-1 rounded-md bg-valora-green/10 ml-1">
                 Early Access
               </span>
             ) : (
-              step !== "blocked" && (
-                <div className="hidden md:flex items-center gap-2 ml-2">
-                  <div className="flex gap-1">
-                    {Array.from({ length: limit }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                          i < remaining ? "bg-valora-green" : "bg-border"
-                        }`}
-                      />
-                    ))}
+              <>
+                {step !== "blocked" && (
+                  <div className="hidden md:flex items-center gap-2 ml-2">
+                    <div className="flex gap-1">
+                      {Array.from({ length: limit }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                            i < remaining ? "bg-valora-green" : "bg-border"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground tabular-nums">
+                      {remaining}/{limit}
+                    </span>
                   </div>
-                  <span className="text-[11px] text-muted-foreground tabular-nums">
-                    {remaining}/{limit}
-                  </span>
-                </div>
-              )
+                )}
+                <Button
+                  size="sm"
+                  className="rounded-lg gap-1.5 h-9 ml-1"
+                  onClick={handleUpgradeClick}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Sblocca</span>
+                </Button>
+              </>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={async () => {
-                await signOut();
-                navigate({ to: "/login" });
-              }}
-              title="Esci"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
+            {user ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={async () => {
+                  await signOut();
+                  navigate({ to: "/" });
+                }}
+                title="Esci"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Link to="/login">
+                <Button variant="outline" size="sm" className="rounded-lg gap-2 h-9">
+                  <LogIn className="w-4 h-4" />
+                  <span className="hidden sm:inline">Accedi</span>
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </header>
