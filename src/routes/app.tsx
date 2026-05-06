@@ -330,59 +330,82 @@ function AppPage() {
             <img src={valoraLogo} alt="Valora" className="h-14 md:h-16 w-auto" />
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/clients">
-              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
-                <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">Clienti</span>
-              </Button>
-            </Link>
-            <Link to="/saved">
-              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
-                <FolderOpen className="w-4 h-4" />
-                <span className="hidden sm:inline">Salvati</span>
-              </Button>
-            </Link>
-            <Link to="/settings">
-              <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
-                <Settings className="w-4 h-4" />
-                <span className="hidden sm:inline">Studio</span>
-              </Button>
-            </Link>
+            {user && (
+              <>
+                <Link to="/clients">
+                  <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
+                    <Users className="w-4 h-4" />
+                    <span className="hidden sm:inline">Clienti</span>
+                  </Button>
+                </Link>
+                <Link to="/saved">
+                  <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
+                    <FolderOpen className="w-4 h-4" />
+                    <span className="hidden sm:inline">Salvati</span>
+                  </Button>
+                </Link>
+                <Link to="/settings">
+                  <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
+                    <Settings className="w-4 h-4" />
+                    <span className="hidden sm:inline">Studio</span>
+                  </Button>
+                </Link>
+              </>
+            )}
             {isSubscribed ? (
               <span className="text-[10px] font-bold text-valora-green uppercase tracking-wider px-2.5 py-1 rounded-md bg-valora-green/10 ml-1">
                 Early Access
               </span>
             ) : (
-              step !== "blocked" && (
-                <div className="hidden md:flex items-center gap-2 ml-2">
-                  <div className="flex gap-1">
-                    {Array.from({ length: limit }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                          i < remaining ? "bg-valora-green" : "bg-border"
-                        }`}
-                      />
-                    ))}
+              <>
+                {step !== "blocked" && (
+                  <div className="hidden md:flex items-center gap-2 ml-2">
+                    <div className="flex gap-1">
+                      {Array.from({ length: limit }).map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                            i < remaining ? "bg-valora-green" : "bg-border"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground tabular-nums">
+                      {remaining}/{limit}
+                    </span>
                   </div>
-                  <span className="text-[11px] text-muted-foreground tabular-nums">
-                    {remaining}/{limit}
-                  </span>
-                </div>
-              )
+                )}
+                <Button
+                  size="sm"
+                  className="rounded-lg gap-1.5 h-9 ml-1"
+                  onClick={handleUpgradeClick}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Sblocca</span>
+                </Button>
+              </>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={async () => {
-                await signOut();
-                navigate({ to: "/login" });
-              }}
-              title="Esci"
-            >
-              <LogOut className="w-4 h-4" />
-            </Button>
+            {user ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={async () => {
+                  await signOut();
+                  navigate({ to: "/" });
+                }}
+                title="Esci"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Link to="/login">
+                <Button variant="outline" size="sm" className="rounded-lg gap-2 h-9">
+                  <LogIn className="w-4 h-4" />
+                  <span className="hidden sm:inline">Accedi</span>
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </header>
