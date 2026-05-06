@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings, Users, Sparkles, Lightbulb, Clock } from "lucide-react";
+import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings, Users, Sparkles, Lightbulb, Clock, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
@@ -8,7 +8,7 @@ import { QuoteEditor } from "@/components/QuoteEditor";
 import { Paywall } from "@/components/Paywall";
 import { generateQuote } from "@/server/generate-quote.functions";
 import { getQuoteStatus, saveQuoteFn, migrateLocalQuotes } from "@/server/quotes.functions";
-import { syncCheckoutSession, syncCurrentStripeSubscription } from "@/server/stripe.functions";
+import { syncCheckoutSession, syncCurrentStripeSubscription, createCheckoutSession } from "@/server/stripe.functions";
 import { getStudioProfile } from "@/server/studio.functions";
 import { listClients } from "@/server/clients.functions";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth-context";
 import { getSavedQuotes } from "@/lib/quote-storage";
+import { getAnonCount, incAnonCount, ANON_FREE_LIMIT } from "@/lib/anon-quota";
 import valoraLogo from "@/assets/valora-logo.png";
 
 const EXAMPLE_PROMPTS = [
