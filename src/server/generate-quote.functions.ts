@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequestHeader } from "@tanstack/react-start/server";
+import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 const FREE_LIMIT = 3;
 
@@ -10,20 +12,34 @@ const inputSchema = z.object({
 });
 
 export const generateQuote = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((input: { transcription: string; workZone?: string }) => inputSchema.parse(input))
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-
-    // Server-side quota enforcement (free tier: FREE_LIMIT generations).
-    const [profileRes, countRes] = await Promise.all([
-      supabase.from("profiles").select("subscription_status").eq("id", userId).maybeSingle(),
-      supabase.from("quotes").select("id", { count: "exact", head: true }).eq("user_id", userId),
-    ]);
-    const isSubscribed = profileRes.data?.subscription_status === "active";
-    const count = countRes.count ?? 0;
-    if (!isSubscribed && count >= FREE_LIMIT) {
-      return { error: "Hai esaurito i preventivi gratuiti. Sblocca il piano per continuare." };
+  .handler(async ({ data }) => {
+    // Optional auth: if a Bearer token is present, validate it and enforce
+    // server-side quota for authenticated users. Anonymous users are allowed
+    // (product design: 3 free quotes tracked client-side) but receive no
+    // server-side counter — that's a known UX/product trade-off.
+    const authHeader = getRequestHeader("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.slice(7);
+      const SUPABASE_URL = process.env.SUPABASE_URL!;
+      const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY!;
+      const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+      });
+      const { data: claims } = await supabase.auth.getClaims(token);
+      const userId = claims?.claims?.sub;
+      if (userId) {
+        const [profileRes, countRes] = await Promise.all([
+          supabase.from("profiles").select("subscription_status").eq("id", userId).maybeSingle(),
+          supabase.from("quotes").select("id", { count: "exact", head: true }).eq("user_id", userId),
+        ]);
+        const isSubscribed = profileRes.data?.subscription_status === "active";
+        const count = countRes.count ?? 0;
+        if (!isSubscribed && count >= FREE_LIMIT) {
+          return { error: "Hai esaurito i preventivi gratuiti. Sblocca il piano per continuare." };
+        }
+      }
     }
 
     const apiKey = process.env.LOVABLE_API_KEY;
