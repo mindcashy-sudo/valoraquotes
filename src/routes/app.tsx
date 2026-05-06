@@ -65,16 +65,45 @@ function AppPage() {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [projectAddress, setProjectAddress] = useState("");
 
-  // Auth guard
-  useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/login" });
-  }, [user, authLoading, navigate]);
+  // No auth guard: /app is open. Login is required only to save quotes/clients.
 
-  // Migrate localStorage quotes once + load status
+  // Post-login: if user came from "Abbonati" CTA while anonymous, resume checkout.
   useEffect(() => {
     if (!user) return;
+    let resume = false;
+    try {
+      resume = sessionStorage.getItem("valora_post_login") === "checkout";
+      if (resume) sessionStorage.removeItem("valora_post_login");
+    } catch {
+      /* noop */
+    }
+    if (resume) {
+      (async () => {
+        try {
+          const res = await createCheckoutSession({ data: { origin: window.location.origin } });
+          if (res.url) window.location.href = res.url;
+        } catch {
+          /* noop */
+        }
+      })();
+    }
+  }, [user]);
+
+  // Load status (logged-in) or initialize anonymous flow.
+  useEffect(() => {
+    if (authLoading) return;
     const run = async () => {
       try {
+        if (!user) {
+          // Anonymous flow: track quotes locally, no studio/onboarding.
+          const c = getAnonCount();
+          setCount(c);
+          setLimit(ANON_FREE_LIMIT);
+          setIsSubscribed(false);
+          setStep(c < ANON_FREE_LIMIT ? "record" : "blocked");
+          return;
+        }
+
         // Check studio profile / onboarding
         const studioRes = await getStudioProfile();
         const studio = studioRes.profile;
@@ -149,7 +178,7 @@ function AppPage() {
       }
     };
     run();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleTranscription = (text: string) => {
     setTranscription(text);
