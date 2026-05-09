@@ -378,7 +378,21 @@ function PublicQuotePage() {
                   <span>P.IVA {data.studio.vat_number}</span>
                 </div>
               )}
+              {data.studio.albo_number && (
+                <div className="flex items-start gap-2">
+                  <Building2 className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>Albo n. {data.studio.albo_number}</span>
+                </div>
+              )}
             </div>
+            {data.studio.iban && (
+              <div className="pt-3 mt-3 border-t border-border/50">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">
+                  Coordinate bancarie
+                </p>
+                <p className="text-sm font-mono tabular-nums">{data.studio.iban}</p>
+              </div>
+            )}
           </section>
         )}
 
