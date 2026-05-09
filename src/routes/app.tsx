@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings, Users, Sparkles, Lightbulb, Clock, LogIn } from "lucide-react";
+import { Loader2, ArrowLeft, FolderOpen, Pencil, Check, LogOut, Settings, Users, Sparkles, Lightbulb, Clock, LogIn, BookText } from "lucide-react";
 import { toast } from "sonner";
 import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
@@ -332,6 +332,12 @@ function AppPage() {
           <div className="flex items-center gap-2">
             {user && (
               <>
+                <Link to="/listino">
+                  <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
+                    <BookText className="w-4 h-4" />
+                    <span className="hidden sm:inline">Listino</span>
+                  </Button>
+                </Link>
                 <Link to="/clients">
                   <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
                     <Users className="w-4 h-4" />
