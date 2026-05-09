@@ -14,6 +14,7 @@ const inputSchema = z.object({
 export const generateQuote = createServerFn({ method: "POST" })
   .inputValidator((input: { transcription: string; workZone?: string }) => inputSchema.parse(input))
   .handler(async ({ data }) => {
+    let priceListSnippet = "";
     // Optional auth: if a Bearer token is present, validate it and enforce
     // server-side quota for authenticated users. Anonymous users are allowed
     // (product design: 3 free quotes tracked client-side) but receive no
@@ -30,14 +31,36 @@ export const generateQuote = createServerFn({ method: "POST" })
       const { data: claims } = await supabase.auth.getClaims(token);
       const userId = claims?.claims?.sub;
       if (userId) {
-        const [profileRes, countRes] = await Promise.all([
+        const [profileRes, countRes, priceListRes] = await Promise.all([
           supabase.from("profiles").select("subscription_status").eq("id", userId).maybeSingle(),
           supabase.from("quotes").select("id", { count: "exact", head: true }).eq("user_id", userId),
+          supabase
+            .from("studio_price_list")
+            .select("code, name, category, unit, unit_price")
+            .eq("user_id", userId)
+            .limit(400),
         ]);
         const isSubscribed = profileRes.data?.subscription_status === "active";
         const count = countRes.count ?? 0;
         if (!isSubscribed && count >= FREE_LIMIT) {
           return { error: "Hai esaurito i preventivi gratuiti. Sblocca il piano per continuare." };
+        }
+        const items = priceListRes.data ?? [];
+        if (items.length > 0) {
+          const grouped: Record<string, typeof items> = {};
+          for (const it of items) {
+            const k = it.category || "Altro";
+            (grouped[k] ||= []).push(it);
+          }
+          const lines: string[] = [];
+          for (const [cat, rows] of Object.entries(grouped)) {
+            lines.push(`[${cat}]`);
+            for (const r of rows) {
+              const code = r.code ? `${r.code} - ` : "";
+              lines.push(`  ${code}${r.name} | €${Number(r.unit_price).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${r.unit}`);
+            }
+          }
+          priceListSnippet = lines.join("\n");
         }
       }
     }
