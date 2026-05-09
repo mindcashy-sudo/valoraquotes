@@ -13,6 +13,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ListinoRouteImport } from './routes/listino'
 import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -39,6 +40,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ListinoRoute = ListinoRouteImport.update({
+  id: '/listino',
+  path: '/listino',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClientsRoute = ClientsRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/clients': typeof ClientsRouteWithChildren
+  '/listino': typeof ListinoRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/saved': typeof SavedRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/clients': typeof ClientsRouteWithChildren
+  '/listino': typeof ListinoRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/saved': typeof SavedRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/clients': typeof ClientsRouteWithChildren
+  '/listino': typeof ListinoRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/saved': typeof SavedRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/clients'
+    | '/listino'
     | '/login'
     | '/onboarding'
     | '/saved'
@@ -136,6 +146,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/clients'
+    | '/listino'
     | '/login'
     | '/onboarding'
     | '/saved'
@@ -149,6 +160,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/clients'
+    | '/listino'
     | '/login'
     | '/onboarding'
     | '/saved'
@@ -163,6 +175,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRoute
   ClientsRoute: typeof ClientsRouteWithChildren
+  ListinoRoute: typeof ListinoRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   SavedRoute: typeof SavedRoute
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/listino': {
+      id: '/listino'
+      path: '/listino'
+      fullPath: '/listino'
+      preLoaderRoute: typeof ListinoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clients': {
@@ -269,6 +289,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRoute,
   ClientsRoute: ClientsRouteWithChildren,
+  ListinoRoute: ListinoRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   SavedRoute: SavedRoute,
@@ -280,3 +301,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
