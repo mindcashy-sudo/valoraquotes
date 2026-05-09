@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/public/quote/$token")({
         const { data: studio } = await supabaseAdmin
           .from("studio_profiles")
           .select(
-            "studio_name, architect_name, logo_url, city, address, vat_number, email, phone",
+            "studio_name, architect_name, logo_url, city, address, vat_number, email, phone, iban, albo_number, default_vat_percent",
           )
           .eq("user_id", quote.user_id)
           .maybeSingle();

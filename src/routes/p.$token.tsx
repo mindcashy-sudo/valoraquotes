@@ -24,6 +24,9 @@ interface PublicResponse {
     vat_number: string | null;
     email: string | null;
     phone: string | null;
+    iban: string | null;
+    albo_number: string | null;
+    default_vat_percent: number | null;
   } | null;
   client: {
     name: string | null;
