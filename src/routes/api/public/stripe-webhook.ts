@@ -31,7 +31,11 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
         const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
         if (!secret || !webhookSecret) {
           console.error("Stripe webhook misconfigured: missing STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET");
-          return new Response("Stripe not configured", { status: 500 });
+          // Ack with 200 so Stripe stops retrying; the misconfig is logged server-side.
+          return new Response(JSON.stringify({ received: true, warning: "not configured" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         const stripe = new Stripe(secret);
