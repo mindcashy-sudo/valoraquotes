@@ -85,10 +85,17 @@ export const Route = createFileRoute("/api/public/stripe-webhook")({
           }
         } catch (e) {
           console.error("Webhook handler error", e);
-          return new Response("Handler error", { status: 500 });
+          // Always ack so Stripe doesn't retry indefinitely; error is logged server-side.
+          return new Response(JSON.stringify({ received: true, error: "handler_error_logged" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
-        return new Response("ok", { status: 200 });
+        return new Response(JSON.stringify({ received: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
       },
     },
   },
