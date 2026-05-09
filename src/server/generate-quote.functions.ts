@@ -223,9 +223,15 @@ OUTPUT: solo JSON valido conforme allo schema della tool. Nessun testo extra.`,
           },
           {
             role: "user",
-            content: data.workZone
-              ? `Zona di lavoro dello studio (usa per i benchmark €/mq): ${data.workZone}\n\nRichiesta cliente:\n${data.transcription}`
-              : data.transcription,
+            content: [
+              priceListSnippet
+                ? `LISTINO PERSONALE DELLO STUDIO (FONTE PRIMARIA — usa questi prezzi quando una voce corrisponde, anche solo concettualmente. Solo per le voci NON presenti qui usa i benchmark di mercato. Mantieni codice e unità di misura del listino quando applicabile.):\n${priceListSnippet}\n`
+                : "",
+              data.workZone
+                ? `Zona di lavoro dello studio (usa per i benchmark €/mq): ${data.workZone}`
+                : "",
+              `Richiesta cliente:\n${data.transcription}`,
+            ].filter(Boolean).join("\n\n"),
           },
         ],
         tools: [
