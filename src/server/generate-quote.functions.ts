@@ -14,6 +14,7 @@ const inputSchema = z.object({
 export const generateQuote = createServerFn({ method: "POST" })
   .inputValidator((input: { transcription: string; workZone?: string }) => inputSchema.parse(input))
   .handler(async ({ data }) => {
+    let priceListSnippet = "";
     // Optional auth: if a Bearer token is present, validate it and enforce
     // server-side quota for authenticated users. Anonymous users are allowed
     // (product design: 3 free quotes tracked client-side) but receive no
@@ -30,14 +31,36 @@ export const generateQuote = createServerFn({ method: "POST" })
       const { data: claims } = await supabase.auth.getClaims(token);
       const userId = claims?.claims?.sub;
       if (userId) {
-        const [profileRes, countRes] = await Promise.all([
+        const [profileRes, countRes, priceListRes] = await Promise.all([
           supabase.from("profiles").select("subscription_status").eq("id", userId).maybeSingle(),
           supabase.from("quotes").select("id", { count: "exact", head: true }).eq("user_id", userId),
+          supabase
+            .from("studio_price_list")
+            .select("code, name, category, unit, unit_price")
+            .eq("user_id", userId)
+            .limit(400),
         ]);
         const isSubscribed = profileRes.data?.subscription_status === "active";
         const count = countRes.count ?? 0;
         if (!isSubscribed && count >= FREE_LIMIT) {
           return { error: "Hai esaurito i preventivi gratuiti. Sblocca il piano per continuare." };
+        }
+        const items = priceListRes.data ?? [];
+        if (items.length > 0) {
+          const grouped: Record<string, typeof items> = {};
+          for (const it of items) {
+            const k = it.category || "Altro";
+            (grouped[k] ||= []).push(it);
+          }
+          const lines: string[] = [];
+          for (const [cat, rows] of Object.entries(grouped)) {
+            lines.push(`[${cat}]`);
+            for (const r of rows) {
+              const code = r.code ? `${r.code} - ` : "";
+              lines.push(`  ${code}${r.name} | €${Number(r.unit_price).toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${r.unit}`);
+            }
+          }
+          priceListSnippet = lines.join("\n");
         }
       }
     }
@@ -92,6 +115,13 @@ REGOLE DI SCRITTURA:
 
 
 Il tuo compito NON è generare testo: è SIMULARE LOGICA ECONOMICA REALE e produrre un preventivo che un architetto possa inviare a un cliente senza correzioni.
+
+═══════════════════════════════════════════
+GERARCHIA DELLE FONTI PREZZI (CRITICO)
+═══════════════════════════════════════════
+1) Se nel messaggio utente è presente un "LISTINO PERSONALE DELLO STUDIO": è la FONTE PRIMARIA. Per ogni voce che corrisponde (anche solo concettualmente) usa il prezzo del listino moltiplicato per la quantità stimata. Mantieni unità di misura del listino. Se utile, riporta il codice della voce all'inizio della descrizione (es. "DEM.01 - Demolizione tramezzi, 45 mq").
+2) Solo per le voci NON presenti nel listino, usa i benchmark di mercato qui sotto.
+3) Anche con listino presente, applica comunque il CONTROLLO RANGE €/mq finale: se sfora, riproporziona prima i lavori NON in listino.
 
 ═══════════════════════════════════════════
 BENCHMARK DI MERCATO (OBBLIGATORI)
@@ -200,9 +230,15 @@ OUTPUT: solo JSON valido conforme allo schema della tool. Nessun testo extra.`,
           },
           {
             role: "user",
-            content: data.workZone
-              ? `Zona di lavoro dello studio (usa per i benchmark €/mq): ${data.workZone}\n\nRichiesta cliente:\n${data.transcription}`
-              : data.transcription,
+            content: [
+              priceListSnippet
+                ? `LISTINO PERSONALE DELLO STUDIO (FONTE PRIMARIA — usa questi prezzi quando una voce corrisponde, anche solo concettualmente. Solo per le voci NON presenti qui usa i benchmark di mercato. Mantieni codice e unità di misura del listino quando applicabile.):\n${priceListSnippet}\n`
+                : "",
+              data.workZone
+                ? `Zona di lavoro dello studio (usa per i benchmark €/mq): ${data.workZone}`
+                : "",
+              `Richiesta cliente:\n${data.transcription}`,
+            ].filter(Boolean).join("\n\n"),
           },
         ],
         tools: [

@@ -216,6 +216,45 @@ export type Database = {
           },
         ]
       }
+      studio_price_list: {
+        Row: {
+          category: string | null
+          code: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          unit: string
+          unit_price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          code?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          unit?: string
+          unit_price?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          code?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          unit?: string
+          unit_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       studio_profiles: {
         Row: {
           address: string | null

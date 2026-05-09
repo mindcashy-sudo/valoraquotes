@@ -527,6 +527,13 @@ export const generateQuotePdf = createServerFn({ method: "POST" })
     drawExecutiveSummary(ctx, data.quote);
     drawSections(ctx, data.quote);
     drawTotals(ctx, data.quote, vatPercent);
+    if (studio.iban) {
+      ensure(ctx, 60);
+      drawEyebrow(ctx, "COORDINATE BANCARIE");
+      dText(ctx, "IBAN", MX, ctx.y, 7, bold, MUTED);
+      dText(ctx, studio.iban, MX + 50, ctx.y, 11, bold, INK);
+      ctx.y -= 24;
+    }
     drawNotes(ctx, data.quote, vatPercent);
     drawAcceptance(ctx);
 

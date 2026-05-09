@@ -24,6 +24,9 @@ interface PublicResponse {
     vat_number: string | null;
     email: string | null;
     phone: string | null;
+    iban: string | null;
+    albo_number: string | null;
+    default_vat_percent: number | null;
   } | null;
   client: {
     name: string | null;
@@ -99,7 +102,13 @@ function PublicQuotePage() {
 
   const studioName = data?.studio?.studio_name || data?.studio?.architect_name || "Studio";
 
-  const totalNum = useMemo(() => data?.quote.content.total ?? 0, [data]);
+  const imponibile = useMemo(() => data?.quote.content.total ?? 0, [data]);
+  const vatPercent = useMemo(() => {
+    const v = data?.studio?.default_vat_percent;
+    return v != null ? Number(v) : 22;
+  }, [data]);
+  const iva = useMemo(() => Math.round(imponibile * vatPercent) / 100, [imponibile, vatPercent]);
+  const totalNum = useMemo(() => Math.round((imponibile + iva) * 100) / 100, [imponibile, iva]);
 
   if (loading) {
     return (
@@ -224,16 +233,26 @@ function PublicQuotePage() {
             </div>
 
             {/* total */}
-            <div className="border-t-2 border-valora-green/40 pt-5 flex items-center justify-between">
-              <div>
-                <span className="text-lg font-bold tracking-tight">Totale</span>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
-                  IVA inclusa salvo diversa indicazione
-                </p>
+            <div className="border-t-2 border-valora-green/40 pt-5 space-y-2">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>Imponibile</span>
+                <span className="tabular-nums">€ {fmt(imponibile)}</span>
               </div>
-              <span className="text-2xl font-bold text-valora-green tabular-nums">
-                € {fmt(totalNum)}
-              </span>
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <span>IVA {vatPercent}%</span>
+                <span className="tabular-nums">€ {fmt(iva)}</span>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                <div>
+                  <span className="text-lg font-bold tracking-tight">Totale</span>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
+                    IVA inclusa
+                  </p>
+                </div>
+                <span className="text-2xl font-bold text-valora-green tabular-nums">
+                  € {fmt(totalNum)}
+                </span>
+              </div>
             </div>
 
             {q.notes?.length > 0 && (
@@ -359,7 +378,21 @@ function PublicQuotePage() {
                   <span>P.IVA {data.studio.vat_number}</span>
                 </div>
               )}
+              {data.studio.albo_number && (
+                <div className="flex items-start gap-2">
+                  <Building2 className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>Albo n. {data.studio.albo_number}</span>
+                </div>
+              )}
             </div>
+            {data.studio.iban && (
+              <div className="pt-3 mt-3 border-t border-border/50">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">
+                  Coordinate bancarie
+                </p>
+                <p className="text-sm font-mono tabular-nums">{data.studio.iban}</p>
+              </div>
+            )}
           </section>
         )}
 

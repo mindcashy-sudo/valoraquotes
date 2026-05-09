@@ -4,7 +4,7 @@ import { ArrowLeft, Loader2, CreditCard, ExternalLink, Sparkles } from "lucide-r
 import { useAuth } from "@/lib/auth-context";
 import { getStudioProfile } from "@/server/studio.functions";
 import { StudioProfileForm, type StudioProfile } from "@/components/StudioProfileForm";
-import { Users } from "lucide-react";
+import { Users, BookText } from "lucide-react";
 import valoraLogo from "@/assets/valora-logo.png";
 import { Button } from "@/components/ui/button";
 import { createCustomerPortalSession } from "@/server/stripe.functions";
@@ -78,10 +78,16 @@ function SettingsPage() {
             App
           </Link>
           <img src={valoraLogo} alt="Valora" className="h-14 md:h-16 w-auto" />
-          <Link to="/clients" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
-            <Users className="w-4 h-4" />
-            Clienti
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link to="/listino" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
+              <BookText className="w-4 h-4" />
+              Listino
+            </Link>
+            <Link to="/clients" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
+              <Users className="w-4 h-4" />
+              Clienti
+            </Link>
+          </div>
         </div>
       </header>
 
