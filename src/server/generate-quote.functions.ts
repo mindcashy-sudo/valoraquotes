@@ -117,6 +117,13 @@ REGOLE DI SCRITTURA:
 Il tuo compito NON è generare testo: è SIMULARE LOGICA ECONOMICA REALE e produrre un preventivo che un architetto possa inviare a un cliente senza correzioni.
 
 ═══════════════════════════════════════════
+GERARCHIA DELLE FONTI PREZZI (CRITICO)
+═══════════════════════════════════════════
+1) Se nel messaggio utente è presente un "LISTINO PERSONALE DELLO STUDIO": è la FONTE PRIMARIA. Per ogni voce che corrisponde (anche solo concettualmente) usa il prezzo del listino moltiplicato per la quantità stimata. Mantieni unità di misura del listino. Se utile, riporta il codice della voce all'inizio della descrizione (es. "DEM.01 - Demolizione tramezzi, 45 mq").
+2) Solo per le voci NON presenti nel listino, usa i benchmark di mercato qui sotto.
+3) Anche con listino presente, applica comunque il CONTROLLO RANGE €/mq finale: se sfora, riproporziona prima i lavori NON in listino.
+
+═══════════════════════════════════════════
 BENCHMARK DI MERCATO (OBBLIGATORI)
 ═══════════════════════════════════════════
 Ristrutturazione completa (€/mq, NETTO IVA):
