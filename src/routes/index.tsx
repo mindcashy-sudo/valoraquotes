@@ -8,11 +8,35 @@ import valoraLogo from "@/assets/valora-logo.png";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "VALORA — Preventivi professionali in pochi minuti" },
+      { title: "Valora — Preventivi professionali per architetti in pochi minuti" },
       {
         name: "description",
         content:
-          "Trasforma una richiesta cliente in un preventivo strutturato e professionale. Pensato per architetti e professionisti.",
+          "Da memo vocale a preventivo strutturato e brandizzato in pochi minuti. Workflow completo per studi: PDF, link cliente, tracking accettazione. Prova gratis.",
+      },
+      { property: "og:title", content: "Valora — Preventivi professionali per architetti" },
+      { property: "og:description", content: "Da memo vocale a preventivo strutturato in pochi minuti. Tracking accettazione, PDF brandizzato, archivio clienti." },
+      { property: "og:url", content: "https://usevalora.it/" },
+      { name: "twitter:title", content: "Valora — Preventivi professionali per architetti" },
+      { name: "twitter:description", content: "Da memo vocale a preventivo strutturato in pochi minuti." },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "Valora",
+          applicationCategory: "BusinessApplication",
+          operatingSystem: "Web",
+          description: "Sistema operativo per studi di architettura: da memo vocale a preventivo professionale.",
+          url: "https://usevalora.it",
+          offers: {
+            "@type": "Offer",
+            price: "29",
+            priceCurrency: "EUR",
+          },
+        }),
       },
     ],
   }),
