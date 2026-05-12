@@ -368,6 +368,17 @@ OUTPUT: solo JSON valido conforme allo schema della tool. Nessun testo extra.`,
         quote.total = total;
       }
 
+      // Charge a free-quote unit on every successful generation for non-subscribed
+      // authenticated users. Atomic via SECURITY DEFINER RPC. Best-effort: if the
+      // increment fails we still return the quote (the user already paid the AI cost).
+      if (billableUserId && !billableIsSubscribed) {
+        try {
+          await supabaseAdmin.rpc("increment_free_quotes_used", { _user_id: billableUserId });
+        } catch (err) {
+          console.error("[generate-quote] failed to increment quota counter:", err);
+        }
+      }
+
       return { quote };
     } catch {
       return { error: "Failed to parse quote data." };
