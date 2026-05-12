@@ -63,6 +63,7 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          free_quotes_used: number
           id: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -72,6 +73,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email?: string | null
+          free_quotes_used?: number
           id: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -81,6 +83,7 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string | null
+          free_quotes_used?: number
           id?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -338,6 +341,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      increment_free_quotes_used: {
+        Args: { _user_id: string }
+        Returns: number
+      }
       next_quote_number: {
         Args: { _user_id: string; _year: number }
         Returns: number
