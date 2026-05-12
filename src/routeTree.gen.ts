@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -29,6 +30,11 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicQuoteTokenRouteImport } from './routes/api/public/quote.$token'
 
+const UnsubscribeRoute = UnsubscribeRouteImport.update({
+  id: '/unsubscribe',
+  path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -137,6 +143,7 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
@@ -180,6 +188,7 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
+  '/unsubscribe': typeof UnsubscribeRoute
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/saved'
     | '/settings'
+    | '/unsubscribe'
     | '/clients/$clientId'
     | '/email/unsubscribe'
     | '/p/$token'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/saved'
     | '/settings'
+    | '/unsubscribe'
     | '/clients/$clientId'
     | '/email/unsubscribe'
     | '/p/$token'
@@ -245,6 +256,7 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/saved'
     | '/settings'
+    | '/unsubscribe'
     | '/clients/$clientId'
     | '/email/unsubscribe'
     | '/p/$token'
@@ -267,6 +279,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   SavedRoute: typeof SavedRoute
   SettingsRoute: typeof SettingsRoute
+  UnsubscribeRoute: typeof UnsubscribeRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   PTokenRoute: typeof PTokenRoute
   ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
@@ -281,6 +294,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/unsubscribe': {
+      id: '/unsubscribe'
+      path: '/unsubscribe'
+      fullPath: '/unsubscribe'
+      preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -437,6 +457,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   SavedRoute: SavedRoute,
   SettingsRoute: SettingsRoute,
+  UnsubscribeRoute: UnsubscribeRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   PTokenRoute: PTokenRoute,
   ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
