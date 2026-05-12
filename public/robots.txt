@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /settings
+Disallow: /clients
+Disallow: /saved
+Disallow: /listino
+Disallow: /onboarding
+Disallow: /api/
+
+Sitemap: https://usevalora.it/sitemap.xml
