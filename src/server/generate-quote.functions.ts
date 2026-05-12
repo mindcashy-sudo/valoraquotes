@@ -16,6 +16,8 @@ export const generateQuote = createServerFn({ method: "POST" })
   .inputValidator((input: { transcription: string; workZone?: string }) => inputSchema.parse(input))
   .handler(async ({ data }) => {
     let priceListSnippet = "";
+    let billableUserId: string | null = null;
+    let billableIsSubscribed = false;
     // Optional auth: if a Bearer token is present, validate it and enforce
     // server-side quota for authenticated users. Anonymous users are allowed
     // (product design: 3 free quotes tracked client-side) but receive no
@@ -49,6 +51,8 @@ export const generateQuote = createServerFn({ method: "POST" })
         if (!isSubscribed && used >= FREE_LIMIT) {
           return { error: "Hai esaurito i preventivi gratuiti. Sblocca il piano per continuare." };
         }
+        billableUserId = userId;
+        billableIsSubscribed = isSubscribed;
         const items = priceListRes.data ?? [];
         if (items.length > 0) {
           const grouped: Record<string, typeof items> = {};
