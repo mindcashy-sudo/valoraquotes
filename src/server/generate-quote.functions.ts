@@ -3,6 +3,7 @@ import { getRequestHeader } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const FREE_LIMIT = 3;
 
@@ -31,9 +32,12 @@ export const generateQuote = createServerFn({ method: "POST" })
       const { data: claims } = await supabase.auth.getClaims(token);
       const userId = claims?.claims?.sub;
       if (userId) {
-        const [profileRes, countRes, priceListRes] = await Promise.all([
-          supabase.from("profiles").select("subscription_status").eq("id", userId).maybeSingle(),
-          supabase.from("quotes").select("id", { count: "exact", head: true }).eq("user_id", userId),
+        const [profileRes, priceListRes] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("subscription_status, free_quotes_used")
+            .eq("id", userId)
+            .maybeSingle(),
           supabase
             .from("studio_price_list")
             .select("code, name, category, unit, unit_price")
@@ -41,8 +45,8 @@ export const generateQuote = createServerFn({ method: "POST" })
             .limit(400),
         ]);
         const isSubscribed = profileRes.data?.subscription_status === "active";
-        const count = countRes.count ?? 0;
-        if (!isSubscribed && count >= FREE_LIMIT) {
+        const used = profileRes.data?.free_quotes_used ?? 0;
+        if (!isSubscribed && used >= FREE_LIMIT) {
           return { error: "Hai esaurito i preventivi gratuiti. Sblocca il piano per continuare." };
         }
         const items = priceListRes.data ?? [];
