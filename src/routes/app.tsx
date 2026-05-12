@@ -212,9 +212,18 @@ function AppPage() {
         setSaved(false);
         setStep("result");
         if (!user) {
-          // Increment anonymous counter on successful generation.
+          // Anonymous: increment local counter on successful generation.
           const next = incAnonCount();
           setCount(next);
+        } else if (!isSubscribed) {
+          // Authenticated free tier: server already incremented, refresh status.
+          try {
+            const status = await getQuoteStatus();
+            setCount(status.count);
+            setIsSubscribed(status.isSubscribed);
+          } catch {
+            /* noop */
+          }
         }
       }
     } catch {
@@ -272,7 +281,6 @@ function AppPage() {
       return;
     }
     setSaved(true);
-    setCount((c) => c + 1);
     toast.success(
       selectedClientId
         ? "Preventivo salvato e collegato al cliente"

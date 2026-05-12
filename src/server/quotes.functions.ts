@@ -18,19 +18,20 @@ export const getQuoteStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const [profileRes, countRes] = await Promise.all([
-      supabase.from("profiles").select("subscription_status").eq("id", userId).maybeSingle(),
-      supabase.from("quotes").select("id", { count: "exact", head: true }).eq("user_id", userId),
-    ]);
-    const status = profileRes.data?.subscription_status ?? "free";
-    const count = countRes.count ?? 0;
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("subscription_status, free_quotes_used")
+      .eq("id", userId)
+      .maybeSingle();
+    const status = profile?.subscription_status ?? "free";
+    const used = profile?.free_quotes_used ?? 0;
     const isSubscribed = status === "active";
     return {
       subscriptionStatus: status,
       isSubscribed,
-      count,
+      count: used,
       limit: FREE_LIMIT,
-      canGenerate: isSubscribed || count < FREE_LIMIT,
+      canGenerate: isSubscribed || used < FREE_LIMIT,
     };
   });
 

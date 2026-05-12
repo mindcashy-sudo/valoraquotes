@@ -3,6 +3,7 @@ import { getRequestHeader } from "@tanstack/react-start/server";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const FREE_LIMIT = 3;
 
@@ -15,6 +16,8 @@ export const generateQuote = createServerFn({ method: "POST" })
   .inputValidator((input: { transcription: string; workZone?: string }) => inputSchema.parse(input))
   .handler(async ({ data }) => {
     let priceListSnippet = "";
+    let billableUserId: string | null = null;
+    let billableIsSubscribed = false;
     // Optional auth: if a Bearer token is present, validate it and enforce
     // server-side quota for authenticated users. Anonymous users are allowed
     // (product design: 3 free quotes tracked client-side) but receive no
@@ -31,9 +34,12 @@ export const generateQuote = createServerFn({ method: "POST" })
       const { data: claims } = await supabase.auth.getClaims(token);
       const userId = claims?.claims?.sub;
       if (userId) {
-        const [profileRes, countRes, priceListRes] = await Promise.all([
-          supabase.from("profiles").select("subscription_status").eq("id", userId).maybeSingle(),
-          supabase.from("quotes").select("id", { count: "exact", head: true }).eq("user_id", userId),
+        const [profileRes, priceListRes] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("subscription_status, free_quotes_used")
+            .eq("id", userId)
+            .maybeSingle(),
           supabase
             .from("studio_price_list")
             .select("code, name, category, unit, unit_price")
@@ -41,10 +47,12 @@ export const generateQuote = createServerFn({ method: "POST" })
             .limit(400),
         ]);
         const isSubscribed = profileRes.data?.subscription_status === "active";
-        const count = countRes.count ?? 0;
-        if (!isSubscribed && count >= FREE_LIMIT) {
+        const used = profileRes.data?.free_quotes_used ?? 0;
+        if (!isSubscribed && used >= FREE_LIMIT) {
           return { error: "Hai esaurito i preventivi gratuiti. Sblocca il piano per continuare." };
         }
+        billableUserId = userId;
+        billableIsSubscribed = isSubscribed;
         const items = priceListRes.data ?? [];
         if (items.length > 0) {
           const grouped: Record<string, typeof items> = {};
@@ -358,6 +366,17 @@ OUTPUT: solo JSON valido conforme allo schema della tool. Nessun testo extra.`,
           return { name: s.name, items, subtotal };
         });
         quote.total = total;
+      }
+
+      // Charge a free-quote unit on every successful generation for non-subscribed
+      // authenticated users. Atomic via SECURITY DEFINER RPC. Best-effort: if the
+      // increment fails we still return the quote (the user already paid the AI cost).
+      if (billableUserId && !billableIsSubscribed) {
+        try {
+          await supabaseAdmin.rpc("increment_free_quotes_used", { _user_id: billableUserId });
+        } catch (err) {
+          console.error("[generate-quote] failed to increment quota counter:", err);
+        }
       }
 
       return { quote };
