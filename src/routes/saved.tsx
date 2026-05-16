@@ -148,7 +148,7 @@ function SavedPage() {
                         className="flex-1 text-left min-w-0"
                       >
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold truncate">{q.content.title}</h3>
+                          <h2 className="font-semibold truncate">{q.content.title}</h2>
                           {badge && (
                             <span className={`shrink-0 inline-flex px-2 py-0.5 rounded-md text-[10px] font-semibold ${badge.cls}`}>
                               {badge.label}

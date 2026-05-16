@@ -187,7 +187,7 @@ function ClientsPage() {
                     params={{ clientId: c.id }}
                     className="flex-1 min-w-0"
                   >
-                    <h3 className="font-semibold text-base truncate">{c.name}</h3>
+                    <h2 className="font-semibold text-base truncate">{c.name}</h2>
                     {c.city && (
                       <p className="text-xs text-muted-foreground mt-0.5">{c.city}</p>
                     )}
