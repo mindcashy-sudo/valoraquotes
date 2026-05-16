@@ -8,7 +8,7 @@ import valoraLogo from "@/assets/valora-logo.png";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Valora — Preventivi professionali per architetti in pochi minuti" },
+      { title: "Valora — Preventivi professionali per architetti" },
       {
         name: "description",
         content:
@@ -20,7 +20,27 @@ export const Route = createFileRoute("/")({
       { name: "twitter:title", content: "Valora — Preventivi professionali per architetti" },
       { name: "twitter:description", content: "Da memo vocale a preventivo strutturato in pochi minuti." },
     ],
+    links: [{ rel: "canonical", href: "https://usevalora.it/" }],
     scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Valora",
+          url: "https://usevalora.it",
+          logo: "https://usevalora.it/favicon.png",
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Valora",
+          url: "https://usevalora.it",
+        }),
+      },
       {
         type: "application/ld+json",
         children: JSON.stringify({
@@ -83,7 +103,7 @@ function ScrollNav() {
         className="relative max-w-6xl mx-auto flex items-center justify-between px-6"
       >
         <motion.div style={{ scale: logoScale }} className="flex items-center gap-3 origin-left">
-          <img src={valoraLogo} alt="Valora" className="h-28 md:h-32 w-auto" />
+          <img src={valoraLogo} alt="Valora logo" className="h-28 md:h-32 w-auto" />
         </motion.div>
         <div className="flex items-center gap-3">
           <Link
@@ -528,7 +548,7 @@ function LandingPage() {
       <footer className="border-t border-border/40 py-8 px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={valoraLogo} alt="Valora" className="h-6 w-auto opacity-50 transition-opacity duration-300 hover:opacity-80" />
+            <img src={valoraLogo} alt="Valora logo" className="h-6 w-auto opacity-50 transition-opacity duration-300 hover:opacity-80" />
           </div>
           <p className="text-xs text-muted-foreground/50">
             © {new Date().getFullYear()} Valora · Preventivi intelligenti per professionisti

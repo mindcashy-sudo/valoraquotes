@@ -77,7 +77,7 @@ function SettingsPage() {
             <ArrowLeft className="w-4 h-4" />
             App
           </Link>
-          <img src={valoraLogo} alt="Valora" className="h-14 md:h-16 w-auto" />
+          <img src={valoraLogo} alt="Valora logo" className="h-14 md:h-16 w-auto" />
           <div className="flex items-center gap-3">
             <Link to="/listino" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5">
               <BookText className="w-4 h-4" />

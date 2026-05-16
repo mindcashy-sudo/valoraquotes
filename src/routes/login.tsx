@@ -10,7 +10,18 @@ import valoraLogo from "@/assets/valora-logo.png";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [{ title: "VALORA — Accedi" }],
+    meta: [
+      { title: "Accedi a Valora — Preventivi per architetti" },
+      {
+        name: "description",
+        content:
+          "Accedi al tuo account Valora o registrati in pochi secondi per generare preventivi professionali dalla tua voce.",
+      },
+      { property: "og:title", content: "Accedi a Valora" },
+      { property: "og:description", content: "Accedi o registrati per generare preventivi professionali dalla tua voce." },
+      { property: "og:url", content: "https://usevalora.it/login" },
+    ],
+    links: [{ rel: "canonical", href: "https://usevalora.it/login" }],
   }),
   component: LoginPage,
 });
@@ -58,7 +69,7 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
       <Link to="/" className="mb-10">
-        <img src={valoraLogo} alt="Valora" className="h-32 w-auto" />
+        <img src={valoraLogo} alt="Valora logo" className="h-32 w-auto" />
       </Link>
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">

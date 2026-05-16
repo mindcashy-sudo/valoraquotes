@@ -1,0 +1,8 @@
+# Valora
+
+> Valora trasforma memo vocali in preventivi professionali strutturati e brandizzati per studi di architettura. Workflow completo: PDF, link cliente, tracking accettazione.
+
+## Pages
+
+- [Home](/): Cos'è Valora, come funziona, prova gratis.
+- [Accedi](/login): Login e registrazione account.

@@ -52,7 +52,7 @@ function OnboardingPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
         <div className="max-w-4xl mx-auto px-6 h-20 flex items-center justify-center">
-          <img src={valoraLogo} alt="Valora" className="h-28 w-auto" />
+          <img src={valoraLogo} alt="Valora logo" className="h-28 w-auto" />
         </div>
       </header>
 

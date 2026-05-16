@@ -224,7 +224,7 @@ function PriceListPage() {
             <ArrowLeft className="w-4 h-4" />
             App
           </Link>
-          <img src={valoraLogo} alt="Valora" className="h-14 md:h-16 w-auto" />
+          <img src={valoraLogo} alt="Valora logo" className="h-14 md:h-16 w-auto" />
           <div className="w-12" />
         </div>
       </header>
@@ -302,7 +302,7 @@ function PriceListPage() {
               {Object.entries(grouped).map(([cat, rows]) => (
                 <div key={cat} className="rounded-2xl border border-border overflow-hidden">
                   <div className="px-5 py-3 bg-muted/40 border-b border-border flex items-center justify-between">
-                    <h3 className="text-sm font-semibold tracking-tight">{cat}</h3>
+                    <h2 className="text-sm font-semibold tracking-tight">{cat}</h2>
                     <span className="text-xs text-muted-foreground">
                       {rows.length} {rows.length === 1 ? "voce" : "voci"}
                     </span>
