@@ -10,7 +10,18 @@ import valoraLogo from "@/assets/valora-logo.png";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
-    meta: [{ title: "VALORA — Accedi" }],
+    meta: [
+      { title: "Accedi a Valora — Preventivi per architetti" },
+      {
+        name: "description",
+        content:
+          "Accedi al tuo account Valora o registrati in pochi secondi per generare preventivi professionali dalla tua voce.",
+      },
+      { property: "og:title", content: "Accedi a Valora" },
+      { property: "og:description", content: "Accedi o registrati per generare preventivi professionali dalla tua voce." },
+      { property: "og:url", content: "https://usevalora.it/login" },
+    ],
+    links: [{ rel: "canonical", href: "https://usevalora.it/login" }],
   }),
   component: LoginPage,
 });
