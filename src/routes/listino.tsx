@@ -224,7 +224,7 @@ function PriceListPage() {
             <ArrowLeft className="w-4 h-4" />
             App
           </Link>
-          <img src={valoraLogo} alt="Valora" className="h-14 md:h-16 w-auto" />
+          <img src={valoraLogo} alt="Valora logo" className="h-14 md:h-16 w-auto" />
           <div className="w-12" />
         </div>
       </header>

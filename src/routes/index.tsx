@@ -83,7 +83,7 @@ function ScrollNav() {
         className="relative max-w-6xl mx-auto flex items-center justify-between px-6"
       >
         <motion.div style={{ scale: logoScale }} className="flex items-center gap-3 origin-left">
-          <img src={valoraLogo} alt="Valora" className="h-28 md:h-32 w-auto" />
+          <img src={valoraLogo} alt="Valora logo" className="h-28 md:h-32 w-auto" />
         </motion.div>
         <div className="flex items-center gap-3">
           <Link
@@ -528,7 +528,7 @@ function LandingPage() {
       <footer className="border-t border-border/40 py-8 px-6">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={valoraLogo} alt="Valora" className="h-6 w-auto opacity-50 transition-opacity duration-300 hover:opacity-80" />
+            <img src={valoraLogo} alt="Valora logo" className="h-6 w-auto opacity-50 transition-opacity duration-300 hover:opacity-80" />
           </div>
           <p className="text-xs text-muted-foreground/50">
             © {new Date().getFullYear()} Valora · Preventivi intelligenti per professionisti

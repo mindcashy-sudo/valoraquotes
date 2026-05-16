@@ -86,7 +86,7 @@ function SavedPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <Link to="/app" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-            <img src={valoraLogo} alt="Valora" className="h-14 md:h-16 w-auto" />
+            <img src={valoraLogo} alt="Valora logo" className="h-14 md:h-16 w-auto" />
           </Link>
         </div>
       </header>
