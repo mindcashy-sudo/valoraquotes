@@ -8,7 +8,7 @@ import valoraLogo from "@/assets/valora-logo.png";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Valora — Preventivi professionali per architetti in pochi minuti" },
+      { title: "Valora — Preventivi professionali per architetti" },
       {
         name: "description",
         content:
@@ -20,7 +20,27 @@ export const Route = createFileRoute("/")({
       { name: "twitter:title", content: "Valora — Preventivi professionali per architetti" },
       { name: "twitter:description", content: "Da memo vocale a preventivo strutturato in pochi minuti." },
     ],
+    links: [{ rel: "canonical", href: "https://usevalora.it/" }],
     scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Valora",
+          url: "https://usevalora.it",
+          logo: "https://usevalora.it/favicon.png",
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Valora",
+          url: "https://usevalora.it",
+        }),
+      },
       {
         type: "application/ld+json",
         children: JSON.stringify({
