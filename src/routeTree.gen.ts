@@ -21,10 +21,10 @@ import { Route as ListinoRouteImport } from './routes/listino'
 import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ProgettiProjectIdRouteImport } from './routes/progetti.$projectId'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as ClientsClientIdRouteImport } from './routes/clients.$clientId'
+import { Route as ProgettiProjectIdIndexRouteImport } from './routes/progetti.$projectId.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
 import { Route as ProgettiProjectIdComputoComputoIdRouteImport } from './routes/progetti.$projectId.computo.$computoId'
@@ -95,11 +95,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProgettiProjectIdRoute = ProgettiProjectIdRouteImport.update({
-  id: '/$projectId',
-  path: '/$projectId',
-  getParentRoute: () => ProgettiRoute,
-} as any)
 const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
   path: '/p/$token',
@@ -115,6 +110,11 @@ const ClientsClientIdRoute = ClientsClientIdRouteImport.update({
   path: '/$clientId',
   getParentRoute: () => ClientsRoute,
 } as any)
+const ProgettiProjectIdIndexRoute = ProgettiProjectIdIndexRouteImport.update({
+  id: '/$projectId/',
+  path: '/$projectId/',
+  getParentRoute: () => ProgettiRoute,
+} as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -127,9 +127,9 @@ const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
 } as any)
 const ProgettiProjectIdComputoComputoIdRoute =
   ProgettiProjectIdComputoComputoIdRouteImport.update({
-    id: '/computo/$computoId',
-    path: '/computo/$computoId',
-    getParentRoute: () => ProgettiProjectIdRoute,
+    id: '/$projectId/computo/$computoId',
+    path: '/$projectId/computo/$computoId',
+    getParentRoute: () => ProgettiRoute,
   } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
@@ -181,9 +181,9 @@ export interface FileRoutesByFullPath {
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
-  '/progetti/$projectId': typeof ProgettiProjectIdRouteWithChildren
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/progetti/$projectId/': typeof ProgettiProjectIdIndexRoute
   '/api/public/quote/$token': typeof ApiPublicQuoteTokenRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -208,9 +208,9 @@ export interface FileRoutesByTo {
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
-  '/progetti/$projectId': typeof ProgettiProjectIdRouteWithChildren
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/progetti/$projectId': typeof ProgettiProjectIdIndexRoute
   '/api/public/quote/$token': typeof ApiPublicQuoteTokenRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -236,9 +236,9 @@ export interface FileRoutesById {
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
-  '/progetti/$projectId': typeof ProgettiProjectIdRouteWithChildren
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
+  '/progetti/$projectId/': typeof ProgettiProjectIdIndexRoute
   '/api/public/quote/$token': typeof ApiPublicQuoteTokenRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -265,9 +265,9 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/email/unsubscribe'
     | '/p/$token'
-    | '/progetti/$projectId'
     | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
+    | '/progetti/$projectId/'
     | '/api/public/quote/$token'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -292,9 +292,9 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/email/unsubscribe'
     | '/p/$token'
-    | '/progetti/$projectId'
     | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
+    | '/progetti/$projectId'
     | '/api/public/quote/$token'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -319,9 +319,9 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/email/unsubscribe'
     | '/p/$token'
-    | '/progetti/$projectId'
     | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
+    | '/progetti/$projectId/'
     | '/api/public/quote/$token'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -442,13 +442,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/progetti/$projectId': {
-      id: '/progetti/$projectId'
-      path: '/$projectId'
-      fullPath: '/progetti/$projectId'
-      preLoaderRoute: typeof ProgettiProjectIdRouteImport
-      parentRoute: typeof ProgettiRoute
-    }
     '/p/$token': {
       id: '/p/$token'
       path: '/p/$token'
@@ -470,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientsClientIdRouteImport
       parentRoute: typeof ClientsRoute
     }
+    '/progetti/$projectId/': {
+      id: '/progetti/$projectId/'
+      path: '/$projectId'
+      fullPath: '/progetti/$projectId/'
+      preLoaderRoute: typeof ProgettiProjectIdIndexRouteImport
+      parentRoute: typeof ProgettiRoute
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -486,10 +486,10 @@ declare module '@tanstack/react-router' {
     }
     '/progetti/$projectId/computo/$computoId': {
       id: '/progetti/$projectId/computo/$computoId'
-      path: '/computo/$computoId'
+      path: '/$projectId/computo/$computoId'
       fullPath: '/progetti/$projectId/computo/$computoId'
       preLoaderRoute: typeof ProgettiProjectIdComputoComputoIdRouteImport
-      parentRoute: typeof ProgettiProjectIdRoute
+      parentRoute: typeof ProgettiRoute
     }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
@@ -547,24 +547,15 @@ const ClientsRouteChildren: ClientsRouteChildren = {
 const ClientsRouteWithChildren =
   ClientsRoute._addFileChildren(ClientsRouteChildren)
 
-interface ProgettiProjectIdRouteChildren {
+interface ProgettiRouteChildren {
+  ProgettiProjectIdIndexRoute: typeof ProgettiProjectIdIndexRoute
   ProgettiProjectIdComputoComputoIdRoute: typeof ProgettiProjectIdComputoComputoIdRoute
 }
 
-const ProgettiProjectIdRouteChildren: ProgettiProjectIdRouteChildren = {
+const ProgettiRouteChildren: ProgettiRouteChildren = {
+  ProgettiProjectIdIndexRoute: ProgettiProjectIdIndexRoute,
   ProgettiProjectIdComputoComputoIdRoute:
     ProgettiProjectIdComputoComputoIdRoute,
-}
-
-const ProgettiProjectIdRouteWithChildren =
-  ProgettiProjectIdRoute._addFileChildren(ProgettiProjectIdRouteChildren)
-
-interface ProgettiRouteChildren {
-  ProgettiProjectIdRoute: typeof ProgettiProjectIdRouteWithChildren
-}
-
-const ProgettiRouteChildren: ProgettiRouteChildren = {
-  ProgettiProjectIdRoute: ProgettiProjectIdRouteWithChildren,
 }
 
 const ProgettiRouteWithChildren = ProgettiRoute._addFileChildren(
@@ -598,3 +589,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
