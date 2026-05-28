@@ -1,6 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Loader2, Search, Plus, Trash2, Calculator, Eye, EyeOff } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Search,
+  Plus,
+  Trash2,
+  Calculator,
+  Eye,
+  HardHat,
+  BookOpen,
+  Hammer,
+  Ruler,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,7 +107,6 @@ function ComputoEditorPage() {
     })();
   }, [computoId, user, authLoading, navigate, refresh]);
 
-  // Debounced search
   useEffect(() => {
     if (!activePrezziarioId) return;
     const t = setTimeout(async () => {
@@ -127,7 +138,7 @@ function ComputoEditorPage() {
     const res = await addVoce({
       data: {
         computoId,
-        voce: { descrizione: "Nuova voce", prezzo_unitario: 0, quantita: 0 },
+        voce: { descrizione: "Nuova lavorazione", prezzo_unitario: 0, quantita: 0 },
       },
     });
     if (res.error) {
@@ -148,13 +159,24 @@ function ComputoEditorPage() {
     await refresh();
   };
 
+  // Group voci by capitolo (ordered by first appearance)
+  const grouped = useMemo(() => {
+    const map = new Map<string, Voce[]>();
+    for (const v of voci) {
+      const cap = v.capitolo?.trim() || "Lavorazioni varie";
+      if (!map.has(cap)) map.set(cap, []);
+      map.get(cap)!.push(v);
+    }
+    return Array.from(map.entries());
+  }, [voci]);
+
   const totali = useMemo(() => {
     const imp = voci.reduce((s, v) => s + Number(v.importo ?? 0), 0);
     const mo = voci.reduce(
       (s, v) => s + Number(v.importo ?? 0) * (Number(v.incidenza_manodopera ?? 0) / 100),
       0
     );
-    return { imp, mo };
+    return { imp, mo, materiali: imp - mo };
   }, [voci]);
 
   if (authLoading || loading) {
@@ -170,7 +192,7 @@ function ComputoEditorPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-3">
         <p className="text-muted-foreground">Computo non trovato</p>
         <Link to="/progetti">
-          <Button variant="outline">Torna ai progetti</Button>
+          <Button variant="outline">Torna ai cantieri</Button>
         </Link>
       </div>
     );
@@ -178,92 +200,135 @@ function ComputoEditorPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <header className="border-b border-border/50 px-6 py-3 bg-background/85 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-3">
+      {/* Top bar */}
+      <header className="border-b border-border bg-background sticky top-0 z-50">
+        <div className="max-w-[1500px] mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <Link to="/progetti/$projectId" params={{ projectId }} className="flex items-center gap-2 hover:opacity-80">
               <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-              <img src={valoraLogo} alt="Valora" className="h-10 w-auto" />
+              <img src={valoraLogo} alt="Valora" className="h-8 w-auto" />
             </Link>
-            <div className="ml-2 min-w-0">
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
-                {computo.tipo === "base" ? "Computo base" : "Variante"}
+            <div className="h-6 w-px bg-border mx-1" />
+            <HardHat className="w-4 h-4 text-muted-foreground shrink-0" />
+            <div className="min-w-0">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold leading-none">
+                {computo.tipo === "base" ? "Computo metrico estimativo" : "Variante in corso d'opera"}
               </div>
-              <div className="font-semibold truncate">{computo.nome}</div>
+              <div className="font-semibold truncate text-sm mt-0.5">{computo.nome}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Button
               variant={viewCliente ? "default" : "outline"}
               size="sm"
-              className="gap-2"
+              className="gap-1.5 h-8"
               onClick={() => setViewCliente((v) => !v)}
-              title="Toggle vista cliente"
             >
-              {viewCliente ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-              Vista {viewCliente ? "cliente" : "tecnica"}
+              <Eye className="w-3.5 h-3.5" />
+              {viewCliente ? "Vista committente" : "Vista tecnica"}
             </Button>
-            <div className="hidden md:flex flex-col items-end ml-2">
-              <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Totale</div>
-              <div className="font-bold tabular-nums">{eur(totali.imp)}</div>
+          </div>
+        </div>
+
+        {/* KPI bar */}
+        <div className="border-t border-border bg-muted/30">
+          <div className="max-w-[1500px] mx-auto px-4 py-2 flex items-center gap-6 overflow-x-auto">
+            <KPI label="Lavorazioni" value={String(voci.length)} mono />
+            <KPI label="Categorie di lavoro" value={String(grouped.length)} mono />
+            <KPI label="Importo materiali" value={eur(totali.materiali)} />
+            <KPI label="Importo manodopera" value={eur(totali.mo)} />
+            <div className="flex-1" />
+            <div className="text-right">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-semibold">
+                Totale lavori a base d'asta
+              </div>
+              <div className="text-lg font-bold tabular-nums leading-none mt-0.5">{eur(totali.imp)}</div>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-[1400px] mx-auto w-full px-4 py-4 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
-        {/* Grid */}
+      <main className="flex-1 max-w-[1500px] mx-auto w-full px-4 py-4 grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4">
+        {/* Computo */}
         <section className="border border-border rounded-xl bg-card overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <div className="text-sm font-semibold">Voci ({voci.length})</div>
-            <Button size="sm" variant="outline" className="gap-2" onClick={handleAddManual}>
-              <Plus className="w-3.5 h-3.5" /> Aggiungi riga
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/20">
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Elenco delle lavorazioni
+            </div>
+            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={handleAddManual}>
+              <Plus className="w-3 h-3" /> Riga manuale
             </Button>
           </div>
+
           {voci.length === 0 ? (
-            <div className="p-10 text-center text-sm text-muted-foreground">
-              Nessuna voce. Cerca nel prezziario a destra o aggiungi una riga manuale.
+            <div className="p-12 text-center">
+              <Ruler className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm font-medium">Nessuna lavorazione inserita</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                Ricerca le voci nell'elenco prezzi a destra, oppure inserisci una riga manuale per lavorazioni non a prezziario.
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+              <table className="w-full text-sm border-collapse">
+                <thead className="bg-muted/40 text-[10px] uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="text-left font-semibold px-3 py-2 w-20">Cod.</th>
-                    <th className="text-left font-semibold px-3 py-2">Descrizione</th>
-                    <th className="text-left font-semibold px-3 py-2 w-16">U.M.</th>
-                    <th className="text-right font-semibold px-3 py-2 w-40">Quantità / Formula</th>
-                    <th className="text-right font-semibold px-3 py-2 w-28">Prezzo</th>
+                    <th className="text-left font-semibold px-3 py-2 w-24">N° · Codice</th>
+                    <th className="text-left font-semibold px-3 py-2">Designazione dei lavori</th>
+                    <th className="text-center font-semibold px-2 py-2 w-14">U.M.</th>
+                    <th className="text-right font-semibold px-3 py-2 w-44">Misurazioni · Quantità</th>
+                    <th className="text-right font-semibold px-3 py-2 w-28">Prezzo unit.</th>
                     {!viewCliente && (
-                      <th className="text-right font-semibold px-3 py-2 w-16">MO%</th>
+                      <th className="text-right font-semibold px-2 py-2 w-14">M.O. %</th>
                     )}
-                    <th className="text-right font-semibold px-3 py-2 w-28">Importo</th>
-                    <th className="w-10"></th>
+                    <th className="text-right font-semibold px-3 py-2 w-32">Importo (€)</th>
+                    <th className="w-9"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {voci.map((v) => (
-                    <VoceRow
-                      key={v.id}
-                      voce={v}
-                      viewCliente={viewCliente}
-                      onUpdated={refresh}
-                      onDelete={() => handleDelete(v.id)}
-                    />
-                  ))}
+                  {grouped.map(([cap, items], gi) => {
+                    const groupTotal = items.reduce((s, v) => s + Number(v.importo ?? 0), 0);
+                    const colSpan = viewCliente ? 6 : 7;
+                    return (
+                      <FragmentGroup key={`${cap}-${gi}`}>
+                        <tr className="bg-foreground/[0.04] border-t border-border">
+                          <td colSpan={colSpan + 1} className="px-3 py-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="text-[11px] uppercase tracking-[0.15em] font-bold text-foreground/80">
+                                Cap. {String(gi + 1).padStart(2, "0")} — {cap}
+                              </div>
+                              <div className="text-[11px] font-mono tabular-nums text-muted-foreground">
+                                Σ {eur(groupTotal)}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                        {items.map((v, idx) => (
+                          <VoceRow
+                            key={v.id}
+                            voce={v}
+                            num={`${gi + 1}.${idx + 1}`}
+                            viewCliente={viewCliente}
+                            onUpdated={refresh}
+                            onDelete={() => handleDelete(v.id)}
+                          />
+                        ))}
+                      </FragmentGroup>
+                    );
+                  })}
                 </tbody>
                 <tfoot>
-                  <tr className="border-t border-border bg-muted/30">
-                    <td colSpan={viewCliente ? 5 : 6} className="px-3 py-2 text-right text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-                      Totale imponibile
+                  <tr className="border-t-2 border-foreground/40 bg-muted/40">
+                    <td colSpan={viewCliente ? 5 : 6} className="px-3 py-2.5 text-right text-[11px] uppercase tracking-[0.15em] text-foreground font-bold">
+                      Sommano i lavori
                     </td>
-                    <td className="px-3 py-2 text-right font-bold tabular-nums">{eur(totali.imp)}</td>
+                    <td className="px-3 py-2.5 text-right font-bold tabular-nums">{eur(totali.imp)}</td>
                     <td></td>
                   </tr>
                   {!viewCliente && (
                     <tr className="bg-muted/20">
-                      <td colSpan={6} className="px-3 py-1.5 text-right text-[11px] uppercase tracking-wider text-muted-foreground">
-                        di cui manodopera
+                      <td colSpan={6} className="px-3 py-1.5 text-right text-[10px] uppercase tracking-wider text-muted-foreground">
+                        Incidenza manodopera
                       </td>
                       <td className="px-3 py-1.5 text-right text-xs tabular-nums text-muted-foreground">{eur(totali.mo)}</td>
                       <td></td>
@@ -275,41 +340,46 @@ function ComputoEditorPage() {
           )}
         </section>
 
-        {/* Price search panel */}
-        <aside className="border border-border rounded-xl bg-card overflow-hidden flex flex-col h-fit lg:sticky lg:top-20">
-          <div className="px-4 py-3 border-b border-border">
-            <div className="text-sm font-semibold mb-2">Prezziario</div>
+        {/* Elenco prezzi */}
+        <aside className="border border-border rounded-xl bg-card overflow-hidden flex flex-col h-fit lg:sticky lg:top-[112px]">
+          <div className="px-4 py-2.5 border-b border-border bg-muted/20 flex items-center gap-2">
+            <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Elenco prezzi unitari
+            </div>
+          </div>
+          <div className="px-3 py-3 border-b border-border space-y-2">
             <select
               value={activePrezziarioId}
               onChange={(e) => setActivePrezziarioId(e.target.value)}
-              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+              className="w-full h-8 rounded-md border border-input bg-background px-2 text-xs"
             >
               {prezziari.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.is_public ? "🌐 " : "🔒 "}
+                  {p.is_public ? "📘 " : "🗂 "}
                   {p.nome}
                 </option>
               ))}
             </select>
-            <div className="relative mt-2">
-              <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Cerca voce (es. scavo, intonaco)..."
-                className="pl-8 h-9"
+                placeholder="Cerca voce (es. scavo, intonaco, OG.01)…"
+                className="pl-8 h-8 text-xs"
               />
             </div>
           </div>
-          <div className="max-h-[60vh] overflow-y-auto">
+          <div className="max-h-[65vh] overflow-y-auto">
             {searching && (
-              <div className="px-4 py-6 text-center text-sm text-muted-foreground">
-                <Loader2 className="w-4 h-4 inline animate-spin mr-2" /> Cerco...
+              <div className="px-4 py-6 text-center text-xs text-muted-foreground">
+                <Loader2 className="w-3.5 h-3.5 inline animate-spin mr-2" /> Consultazione in corso…
               </div>
             )}
             {!searching && results.length === 0 && (
-              <div className="px-4 py-6 text-center text-xs text-muted-foreground">
-                Nessun risultato
+              <div className="px-4 py-8 text-center text-xs text-muted-foreground">
+                Nessuna voce corrispondente nell'elenco prezzi.
               </div>
             )}
             {!searching &&
@@ -322,19 +392,19 @@ function ComputoEditorPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       {it.codice && (
-                        <div className="text-[10px] font-mono uppercase text-muted-foreground">
+                        <div className="text-[10px] font-mono uppercase text-muted-foreground tracking-wider">
                           {it.codice}
                         </div>
                       )}
-                      <div className="text-xs leading-snug line-clamp-2">{it.descrizione}</div>
+                      <div className="text-xs leading-snug line-clamp-2 mt-0.5">{it.descrizione}</div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-xs font-semibold tabular-nums">{eur(Number(it.prezzo))}</div>
-                      <div className="text-[10px] text-muted-foreground">/{it.unita_misura}</div>
+                      <div className="text-[10px] text-muted-foreground font-mono">/ {it.unita_misura}</div>
                     </div>
                   </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-valora-green mt-1 font-semibold uppercase tracking-wider">
-                    + aggiungi al computo
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-valora-green mt-1.5 font-semibold uppercase tracking-wider inline-flex items-center gap-1">
+                    <Plus className="w-3 h-3" /> Inserisci in computo
                   </div>
                 </button>
               ))}
@@ -345,15 +415,34 @@ function ComputoEditorPage() {
   );
 }
 
+function FragmentGroup({ children }: { children: React.ReactNode }) {
+  return <>{children}</>;
+}
+
+function KPI({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="shrink-0">
+      <div className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground font-semibold leading-none">
+        {label}
+      </div>
+      <div className={`text-sm font-semibold tabular-nums mt-1 ${mono ? "font-mono" : ""}`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
 // -------- Editable row --------
 
 function VoceRow({
   voce,
+  num,
   viewCliente,
   onUpdated,
   onDelete,
 }: {
   voce: Voce;
+  num: string;
   viewCliente: boolean;
   onUpdated: () => Promise<void>;
   onDelete: () => void;
@@ -395,7 +484,6 @@ function VoceRow({
       incidenza_manodopera: Number(moStr.replace(",", ".") || 0),
       formula_misura: showFormula ? formula.trim() || null : null,
     };
-    // Only persist if something changed vs original
     const changed =
       patch.descrizione !== voce.descrizione ||
       Number(patch.prezzo_unitario) !== Number(voce.prezzo_unitario) ||
@@ -406,41 +494,47 @@ function VoceRow({
   };
 
   return (
-    <tr className="border-t border-border hover:bg-muted/20">
-      <td className="px-3 py-2 align-top">
-        <span className="text-[11px] font-mono text-muted-foreground">{voce.codice ?? "—"}</span>
+    <tr className="border-t border-border hover:bg-muted/20 align-top">
+      <td className="px-3 py-2">
+        <div className="font-mono text-[11px] tabular-nums text-foreground font-semibold">{num}</div>
+        {voce.codice && (
+          <div className="font-mono text-[10px] text-muted-foreground tracking-wider mt-0.5">
+            {voce.codice}
+          </div>
+        )}
       </td>
-      <td className="px-3 py-2 align-top">
+      <td className="px-3 py-2">
         <input
           value={descrizione}
           onChange={(e) => setDescrizione(e.target.value)}
           onBlur={onBlurAll}
-          className="w-full bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-ring rounded px-1 -mx-1"
+          className="w-full bg-transparent text-sm leading-snug focus:outline-none focus:ring-1 focus:ring-ring rounded px-1 -mx-1"
         />
-        {voce.capitolo && !viewCliente && (
-          <div className="text-[10px] text-muted-foreground mt-0.5 uppercase tracking-wider">
-            {voce.capitolo}
+        {!viewCliente && (
+          <div className="text-[10px] text-muted-foreground mt-1 inline-flex items-center gap-1">
+            <Hammer className="w-2.5 h-2.5" />
+            M.O. {moStr || 0}%
           </div>
         )}
       </td>
-      <td className="px-3 py-2 align-top text-xs text-muted-foreground">
+      <td className="px-2 py-2 text-center text-xs font-mono uppercase text-muted-foreground">
         {voce.unita_misura}
       </td>
-      <td className="px-3 py-2 align-top">
+      <td className="px-3 py-2">
         {showFormula ? (
           <div className="space-y-1">
             <input
               value={formula}
               onChange={(e) => setFormula(e.target.value)}
               onBlur={onBlurAll}
-              placeholder="Es: 4.5 * 3.2"
-              className="w-full bg-transparent text-right text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-ring rounded px-1"
+              placeholder="Es: 4.50 * 3.20 * 2"
+              className="w-full bg-transparent text-right text-sm tabular-nums font-mono focus:outline-none focus:ring-1 focus:ring-ring rounded px-1"
             />
             <div className="flex items-center justify-end gap-1.5 text-[10px]">
               {formulaResult.error ? (
                 <span className="text-destructive">{formulaResult.error}</span>
               ) : (
-                <span className="text-muted-foreground tabular-nums">
+                <span className="text-muted-foreground tabular-nums font-mono">
                   = {formulaResult.value ?? 0}
                 </span>
               )}
@@ -462,45 +556,45 @@ function VoceRow({
               value={qtaStr}
               onChange={(e) => setQtaStr(e.target.value)}
               onBlur={onBlurAll}
-              className="w-full bg-transparent text-right text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-ring rounded px-1"
+              className="w-full bg-transparent text-right text-sm tabular-nums font-mono focus:outline-none focus:ring-1 focus:ring-ring rounded px-1"
               inputMode="decimal"
             />
             <button
               onClick={() => setShowFormula(true)}
               className="shrink-0 text-muted-foreground hover:text-foreground"
-              title="Inserisci formula"
+              title="Inserisci formula di misurazione"
             >
               <Calculator className="w-3.5 h-3.5" />
             </button>
           </div>
         )}
       </td>
-      <td className="px-3 py-2 align-top">
+      <td className="px-3 py-2">
         <input
           value={prezzoStr}
           onChange={(e) => setPrezzoStr(e.target.value)}
           onBlur={onBlurAll}
-          className="w-full bg-transparent text-right text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-ring rounded px-1"
+          className="w-full bg-transparent text-right text-sm tabular-nums font-mono focus:outline-none focus:ring-1 focus:ring-ring rounded px-1"
           inputMode="decimal"
         />
       </td>
       {!viewCliente && (
-        <td className="px-3 py-2 align-top">
+        <td className="px-2 py-2">
           <input
             value={moStr}
             onChange={(e) => setMoStr(e.target.value)}
             onBlur={onBlurAll}
-            className="w-full bg-transparent text-right text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-ring rounded px-1"
+            className="w-full bg-transparent text-right text-sm tabular-nums font-mono focus:outline-none focus:ring-1 focus:ring-ring rounded px-1"
             inputMode="decimal"
           />
         </td>
       )}
-      <td className="px-3 py-2 align-top text-right font-semibold tabular-nums">{eur(importo)}</td>
-      <td className="px-2 py-2 align-top">
+      <td className="px-3 py-2 text-right font-semibold tabular-nums font-mono">{eur(importo)}</td>
+      <td className="px-2 py-2">
         <button
           onClick={onDelete}
           className="text-muted-foreground hover:text-destructive transition-colors"
-          title="Elimina"
+          title="Elimina lavorazione"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
