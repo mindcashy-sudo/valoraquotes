@@ -21,6 +21,7 @@ import { Route as ListinoRouteImport } from './routes/listino'
 import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProgettiIndexRouteImport } from './routes/progetti.index'
 import { Route as ProgettiProjectIdRouteImport } from './routes/progetti.$projectId'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
@@ -95,6 +96,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ProgettiIndexRoute = ProgettiIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProgettiRoute,
 } as any)
 const ProgettiProjectIdRoute = ProgettiProjectIdRouteImport.update({
   id: '/$projectId',
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
   '/progetti/$projectId': typeof ProgettiProjectIdRouteWithChildren
+  '/progetti/': typeof ProgettiIndexRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/progetti/$projectId/': typeof ProgettiProjectIdIndexRoute
@@ -207,7 +214,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/prezziari': typeof PrezziariRoute
-  '/progetti': typeof ProgettiRouteWithChildren
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -215,6 +221,7 @@ export interface FileRoutesByTo {
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
+  '/progetti': typeof ProgettiIndexRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/progetti/$projectId': typeof ProgettiProjectIdIndexRoute
@@ -244,6 +251,7 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
   '/progetti/$projectId': typeof ProgettiProjectIdRouteWithChildren
+  '/progetti/': typeof ProgettiIndexRoute
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/progetti/$projectId/': typeof ProgettiProjectIdIndexRoute
@@ -274,6 +282,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/p/$token'
     | '/progetti/$projectId'
+    | '/progetti/'
     | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/progetti/$projectId/'
@@ -293,7 +302,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/prezziari'
-    | '/progetti'
     | '/saved'
     | '/settings'
     | '/sitemap.xml'
@@ -301,6 +309,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/email/unsubscribe'
     | '/p/$token'
+    | '/progetti'
     | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/progetti/$projectId'
@@ -329,6 +338,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/p/$token'
     | '/progetti/$projectId'
+    | '/progetti/'
     | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/progetti/$projectId/'
@@ -451,6 +461,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/progetti/': {
+      id: '/progetti/'
+      path: '/'
+      fullPath: '/progetti/'
+      preLoaderRoute: typeof ProgettiIndexRouteImport
+      parentRoute: typeof ProgettiRoute
     }
     '/progetti/$projectId': {
       id: '/progetti/$projectId'
@@ -580,10 +597,12 @@ const ProgettiProjectIdRouteWithChildren =
 
 interface ProgettiRouteChildren {
   ProgettiProjectIdRoute: typeof ProgettiProjectIdRouteWithChildren
+  ProgettiIndexRoute: typeof ProgettiIndexRoute
 }
 
 const ProgettiRouteChildren: ProgettiRouteChildren = {
   ProgettiProjectIdRoute: ProgettiProjectIdRouteWithChildren,
+  ProgettiIndexRoute: ProgettiIndexRoute,
 }
 
 const ProgettiRouteWithChildren = ProgettiRoute._addFileChildren(
