@@ -13,6 +13,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedRouteImport } from './routes/saved'
+import { Route as PrezziariRouteImport } from './routes/prezziari'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ListinoRouteImport } from './routes/listino'
@@ -49,6 +50,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const SavedRoute = SavedRouteImport.update({
   id: '/saved',
   path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrezziariRoute = PrezziariRouteImport.update({
+  id: '/prezziari',
+  path: '/prezziari',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingRoute = OnboardingRouteImport.update({
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/listino': typeof ListinoRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/prezziari': typeof PrezziariRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/listino': typeof ListinoRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/prezziari': typeof PrezziariRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/listino': typeof ListinoRoute
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
+  '/prezziari': typeof PrezziariRoute
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/listino'
     | '/login'
     | '/onboarding'
+    | '/prezziari'
     | '/saved'
     | '/settings'
     | '/sitemap.xml'
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/listino'
     | '/login'
     | '/onboarding'
+    | '/prezziari'
     | '/saved'
     | '/settings'
     | '/sitemap.xml'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/listino'
     | '/login'
     | '/onboarding'
+    | '/prezziari'
     | '/saved'
     | '/settings'
     | '/sitemap.xml'
@@ -289,6 +301,7 @@ export interface RootRouteChildren {
   ListinoRoute: typeof ListinoRoute
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
+  PrezziariRoute: typeof PrezziariRoute
   SavedRoute: typeof SavedRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -333,6 +346,13 @@ declare module '@tanstack/react-router' {
       path: '/saved'
       fullPath: '/saved'
       preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/prezziari': {
+      id: '/prezziari'
+      path: '/prezziari'
+      fullPath: '/prezziari'
+      preLoaderRoute: typeof PrezziariRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/onboarding': {
@@ -475,6 +495,7 @@ const rootRouteChildren: RootRouteChildren = {
   ListinoRoute: ListinoRoute,
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
+  PrezziariRoute: PrezziariRoute,
   SavedRoute: SavedRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
