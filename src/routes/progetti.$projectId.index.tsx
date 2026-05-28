@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { getProject } from "@/server/computi.functions";
 import valoraLogo from "@/assets/valora-logo.png";
 
-export const Route = createFileRoute("/progetti/$projectId")({
+export const Route = createFileRoute("/progetti/$projectId/")({
   component: ProgettoPage,
 });
 
