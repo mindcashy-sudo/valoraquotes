@@ -340,10 +340,10 @@ function AppPage() {
           <div className="flex items-center gap-2">
             {user && (
               <>
-                <Link to="/listino">
+                <Link to="/prezziari">
                   <Button variant="ghost" size="sm" className="rounded-lg gap-2 h-9">
                     <BookText className="w-4 h-4" />
-                    <span className="hidden sm:inline">Listino</span>
+                    <span className="hidden sm:inline">Prezziari</span>
                   </Button>
                 </Link>
                 <Link to="/clients">
