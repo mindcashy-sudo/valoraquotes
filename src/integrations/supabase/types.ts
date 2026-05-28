@@ -59,6 +59,146 @@ export type Database = {
         }
         Relationships: []
       }
+      computi: {
+        Row: {
+          approved_at: string | null
+          created_at: string
+          id: string
+          motivazione: string | null
+          nome: string
+          parent_computo_id: string | null
+          project_id: string
+          stato: string
+          tipo: string
+          totale_imponibile: number
+          totale_manodopera: number
+          updated_at: string
+          user_id: string
+          versione: number
+        }
+        Insert: {
+          approved_at?: string | null
+          created_at?: string
+          id?: string
+          motivazione?: string | null
+          nome: string
+          parent_computo_id?: string | null
+          project_id: string
+          stato?: string
+          tipo?: string
+          totale_imponibile?: number
+          totale_manodopera?: number
+          updated_at?: string
+          user_id: string
+          versione?: number
+        }
+        Update: {
+          approved_at?: string | null
+          created_at?: string
+          id?: string
+          motivazione?: string | null
+          nome?: string
+          parent_computo_id?: string | null
+          project_id?: string
+          stato?: string
+          tipo?: string
+          totale_imponibile?: number
+          totale_manodopera?: number
+          updated_at?: string
+          user_id?: string
+          versione?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "computi_parent_computo_id_fkey"
+            columns: ["parent_computo_id"]
+            isOneToOne: false
+            referencedRelation: "computi"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "computi_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      computo_voci: {
+        Row: {
+          capitolo: string | null
+          codice: string | null
+          computo_id: string
+          created_at: string
+          descrizione: string
+          descrizione_cliente: string | null
+          formula_misura: string | null
+          id: string
+          importo: number | null
+          incidenza_manodopera: number
+          macro_categoria_cliente: string | null
+          ordine: number
+          prezzo_unitario: number
+          quantita: number
+          source_price_item_id: string | null
+          unita_misura: string
+          updated_at: string
+          user_id: string
+          visibile_cliente: boolean
+        }
+        Insert: {
+          capitolo?: string | null
+          codice?: string | null
+          computo_id: string
+          created_at?: string
+          descrizione: string
+          descrizione_cliente?: string | null
+          formula_misura?: string | null
+          id?: string
+          importo?: number | null
+          incidenza_manodopera?: number
+          macro_categoria_cliente?: string | null
+          ordine?: number
+          prezzo_unitario?: number
+          quantita?: number
+          source_price_item_id?: string | null
+          unita_misura?: string
+          updated_at?: string
+          user_id: string
+          visibile_cliente?: boolean
+        }
+        Update: {
+          capitolo?: string | null
+          codice?: string | null
+          computo_id?: string
+          created_at?: string
+          descrizione?: string
+          descrizione_cliente?: string | null
+          formula_misura?: string | null
+          id?: string
+          importo?: number | null
+          incidenza_manodopera?: number
+          macro_categoria_cliente?: string | null
+          ordine?: number
+          prezzo_unitario?: number
+          quantita?: number
+          source_price_item_id?: string | null
+          unita_misura?: string
+          updated_at?: string
+          user_id?: string
+          visibile_cliente?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "computo_voci_computo_id_fkey"
+            columns: ["computo_id"]
+            isOneToOne: false
+            referencedRelation: "computi"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -146,6 +286,92 @@ export type Database = {
         }
         Relationships: []
       }
+      price_list_items: {
+        Row: {
+          categoria: string | null
+          codice: string | null
+          created_at: string
+          descrizione: string
+          id: string
+          incidenza_manodopera: number
+          prezzo: number
+          price_list_id: string
+          search_tsv: unknown
+          sottocategoria: string | null
+          unita_misura: string
+        }
+        Insert: {
+          categoria?: string | null
+          codice?: string | null
+          created_at?: string
+          descrizione: string
+          id?: string
+          incidenza_manodopera?: number
+          prezzo?: number
+          price_list_id: string
+          search_tsv?: unknown
+          sottocategoria?: string | null
+          unita_misura?: string
+        }
+        Update: {
+          categoria?: string | null
+          codice?: string | null
+          created_at?: string
+          descrizione?: string
+          id?: string
+          incidenza_manodopera?: number
+          prezzo?: number
+          price_list_id?: string
+          search_tsv?: unknown
+          sottocategoria?: string | null
+          unita_misura?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "price_list_items_price_list_id_fkey"
+            columns: ["price_list_id"]
+            isOneToOne: false
+            referencedRelation: "price_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      price_lists: {
+        Row: {
+          anno: number | null
+          created_at: string
+          id: string
+          is_public: boolean
+          nome: string
+          owner_id: string | null
+          regione: string | null
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          anno?: number | null
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          nome: string
+          owner_id?: string | null
+          regione?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          anno?: number | null
+          created_at?: string
+          id?: string
+          is_public?: boolean
+          nome?: string
+          owner_id?: string | null
+          regione?: string | null
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -176,6 +402,45 @@ export type Database = {
           stripe_subscription_id?: string | null
           subscription_status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          client_id: string | null
+          committente: string | null
+          created_at: string
+          id: string
+          indirizzo_cantiere: string | null
+          nome: string
+          note: string | null
+          stato: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          committente?: string | null
+          created_at?: string
+          id?: string
+          indirizzo_cantiere?: string | null
+          nome: string
+          note?: string | null
+          stato?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          committente?: string | null
+          created_at?: string
+          id?: string
+          indirizzo_cantiere?: string | null
+          nome?: string
+          note?: string | null
+          stato?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
