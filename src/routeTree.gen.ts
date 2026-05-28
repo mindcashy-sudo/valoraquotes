@@ -13,6 +13,7 @@ import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SavedRouteImport } from './routes/saved'
+import { Route as ProgettiRouteImport } from './routes/progetti'
 import { Route as PrezziariRouteImport } from './routes/prezziari'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
@@ -20,11 +21,13 @@ import { Route as ListinoRouteImport } from './routes/listino'
 import { Route as ClientsRouteImport } from './routes/clients'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProgettiProjectIdRouteImport } from './routes/progetti.$projectId'
 import { Route as PTokenRouteImport } from './routes/p.$token'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as ClientsClientIdRouteImport } from './routes/clients.$clientId'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe-webhook'
+import { Route as ProgettiProjectIdComputoComputoIdRouteImport } from './routes/progetti.$projectId.computo.$computoId'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -50,6 +53,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const SavedRoute = SavedRouteImport.update({
   id: '/saved',
   path: '/saved',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgettiRoute = ProgettiRouteImport.update({
+  id: '/progetti',
+  path: '/progetti',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrezziariRoute = PrezziariRouteImport.update({
@@ -87,6 +95,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProgettiProjectIdRoute = ProgettiProjectIdRouteImport.update({
+  id: '/$projectId',
+  path: '/$projectId',
+  getParentRoute: () => ProgettiRoute,
+} as any)
 const PTokenRoute = PTokenRouteImport.update({
   id: '/p/$token',
   path: '/p/$token',
@@ -112,6 +125,12 @@ const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
   path: '/api/public/stripe-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProgettiProjectIdComputoComputoIdRoute =
+  ProgettiProjectIdComputoComputoIdRouteImport.update({
+    id: '/computo/$computoId',
+    path: '/computo/$computoId',
+    getParentRoute: () => ProgettiProjectIdRoute,
+  } as any)
 const LovableEmailTransactionalSendRoute =
   LovableEmailTransactionalSendRouteImport.update({
     id: '/lovable/email/transactional/send',
@@ -154,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/prezziari': typeof PrezziariRoute
+  '/progetti': typeof ProgettiRouteWithChildren
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -161,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
+  '/progetti/$projectId': typeof ProgettiProjectIdRouteWithChildren
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/quote/$token': typeof ApiPublicQuoteTokenRoute
@@ -169,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/progetti/$projectId/computo/$computoId': typeof ProgettiProjectIdComputoComputoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -178,6 +200,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/prezziari': typeof PrezziariRoute
+  '/progetti': typeof ProgettiRouteWithChildren
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -185,6 +208,7 @@ export interface FileRoutesByTo {
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
+  '/progetti/$projectId': typeof ProgettiProjectIdRouteWithChildren
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/quote/$token': typeof ApiPublicQuoteTokenRoute
@@ -193,6 +217,7 @@ export interface FileRoutesByTo {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/progetti/$projectId/computo/$computoId': typeof ProgettiProjectIdComputoComputoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -203,6 +228,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/prezziari': typeof PrezziariRoute
+  '/progetti': typeof ProgettiRouteWithChildren
   '/saved': typeof SavedRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -210,6 +236,7 @@ export interface FileRoutesById {
   '/clients/$clientId': typeof ClientsClientIdRoute
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/p/$token': typeof PTokenRoute
+  '/progetti/$projectId': typeof ProgettiProjectIdRouteWithChildren
   '/api/public/stripe-webhook': typeof ApiPublicStripeWebhookRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/quote/$token': typeof ApiPublicQuoteTokenRoute
@@ -218,6 +245,7 @@ export interface FileRoutesById {
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
+  '/progetti/$projectId/computo/$computoId': typeof ProgettiProjectIdComputoComputoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -229,6 +257,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/prezziari'
+    | '/progetti'
     | '/saved'
     | '/settings'
     | '/sitemap.xml'
@@ -236,6 +265,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/email/unsubscribe'
     | '/p/$token'
+    | '/progetti/$projectId'
     | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/api/public/quote/$token'
@@ -244,6 +274,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/progetti/$projectId/computo/$computoId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -253,6 +284,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/prezziari'
+    | '/progetti'
     | '/saved'
     | '/settings'
     | '/sitemap.xml'
@@ -260,6 +292,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/email/unsubscribe'
     | '/p/$token'
+    | '/progetti/$projectId'
     | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/api/public/quote/$token'
@@ -268,6 +301,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/progetti/$projectId/computo/$computoId'
   id:
     | '__root__'
     | '/'
@@ -277,6 +311,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/prezziari'
+    | '/progetti'
     | '/saved'
     | '/settings'
     | '/sitemap.xml'
@@ -284,6 +319,7 @@ export interface FileRouteTypes {
     | '/clients/$clientId'
     | '/email/unsubscribe'
     | '/p/$token'
+    | '/progetti/$projectId'
     | '/api/public/stripe-webhook'
     | '/lovable/email/suppression'
     | '/api/public/quote/$token'
@@ -292,6 +328,7 @@ export interface FileRouteTypes {
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
+    | '/progetti/$projectId/computo/$computoId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -302,6 +339,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   PrezziariRoute: typeof PrezziariRoute
+  ProgettiRoute: typeof ProgettiRouteWithChildren
   SavedRoute: typeof SavedRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -346,6 +384,13 @@ declare module '@tanstack/react-router' {
       path: '/saved'
       fullPath: '/saved'
       preLoaderRoute: typeof SavedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/progetti': {
+      id: '/progetti'
+      path: '/progetti'
+      fullPath: '/progetti'
+      preLoaderRoute: typeof ProgettiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/prezziari': {
@@ -397,6 +442,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/progetti/$projectId': {
+      id: '/progetti/$projectId'
+      path: '/$projectId'
+      fullPath: '/progetti/$projectId'
+      preLoaderRoute: typeof ProgettiProjectIdRouteImport
+      parentRoute: typeof ProgettiRoute
+    }
     '/p/$token': {
       id: '/p/$token'
       path: '/p/$token'
@@ -431,6 +483,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/stripe-webhook'
       preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/progetti/$projectId/computo/$computoId': {
+      id: '/progetti/$projectId/computo/$computoId'
+      path: '/computo/$computoId'
+      fullPath: '/progetti/$projectId/computo/$computoId'
+      preLoaderRoute: typeof ProgettiProjectIdComputoComputoIdRouteImport
+      parentRoute: typeof ProgettiProjectIdRoute
     }
     '/lovable/email/transactional/send': {
       id: '/lovable/email/transactional/send'
@@ -488,6 +547,30 @@ const ClientsRouteChildren: ClientsRouteChildren = {
 const ClientsRouteWithChildren =
   ClientsRoute._addFileChildren(ClientsRouteChildren)
 
+interface ProgettiProjectIdRouteChildren {
+  ProgettiProjectIdComputoComputoIdRoute: typeof ProgettiProjectIdComputoComputoIdRoute
+}
+
+const ProgettiProjectIdRouteChildren: ProgettiProjectIdRouteChildren = {
+  ProgettiProjectIdComputoComputoIdRoute:
+    ProgettiProjectIdComputoComputoIdRoute,
+}
+
+const ProgettiProjectIdRouteWithChildren =
+  ProgettiProjectIdRoute._addFileChildren(ProgettiProjectIdRouteChildren)
+
+interface ProgettiRouteChildren {
+  ProgettiProjectIdRoute: typeof ProgettiProjectIdRouteWithChildren
+}
+
+const ProgettiRouteChildren: ProgettiRouteChildren = {
+  ProgettiProjectIdRoute: ProgettiProjectIdRouteWithChildren,
+}
+
+const ProgettiRouteWithChildren = ProgettiRoute._addFileChildren(
+  ProgettiRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRoute,
@@ -496,6 +579,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   PrezziariRoute: PrezziariRoute,
+  ProgettiRoute: ProgettiRouteWithChildren,
   SavedRoute: SavedRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
