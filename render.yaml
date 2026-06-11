@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: valora
+    runtime: node
+    region: frankfurt
+    plan: starter
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: node .output/server/index.mjs
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # ---- Public (frontend bundle) ----
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_SUPABASE_PROJECT_ID
+        sync: false
+      # ---- Server-only ----
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: LOVABLE_API_KEY
+        sync: false
