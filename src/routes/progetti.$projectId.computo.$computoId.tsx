@@ -22,8 +22,8 @@ import {
   addVoce,
   updateVoce,
   deleteVoce,
-} from "@/server/computi.functions";
-import { listPrezziari, searchPriceItems } from "@/server/prezziari.functions";
+} from "@/lib/server-fns/computi.functions";
+import { listPrezziari, searchPriceItems } from "@/lib/server-fns/prezziari.functions";
 import { evalFormula } from "@/lib/formula-parser";
 import valoraLogo from "@/assets/valora-logo.png";
 

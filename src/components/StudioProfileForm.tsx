@@ -9,7 +9,7 @@ import {
   upsertStudioProfile,
   createLogoUploadUrl,
   getLogoSignedUrl,
-} from "@/server/studio.functions";
+} from "@/lib/server-fns/studio.functions";
 
 export interface StudioProfile {
   id?: string;

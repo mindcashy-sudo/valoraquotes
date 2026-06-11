@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { getStudioProfile } from "@/server/studio.functions";
+import { getStudioProfile } from "@/lib/server-fns/studio.functions";
 import { StudioProfileForm, type StudioProfile } from "@/components/StudioProfileForm";
 import valoraLogo from "@/assets/valora-logo.png";
 

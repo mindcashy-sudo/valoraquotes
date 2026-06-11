@@ -10,7 +10,7 @@ import {
   listQuotes,
   deleteQuoteFn,
   updateQuoteFn,
-} from "@/server/quotes.functions";
+} from "@/lib/server-fns/quotes.functions";
 import { useAuth } from "@/lib/auth-context";
 import valoraLogo from "@/assets/valora-logo.png";
 

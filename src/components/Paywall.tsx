@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, Check, Clock, ShieldCheck, Infinity as InfinityIcon } from "lucide-react";
-import { createCheckoutSession } from "@/server/stripe.functions";
+import { createCheckoutSession } from "@/lib/server-fns/stripe.functions";
 import { useAuth } from "@/lib/auth-context";
 import { useNavigate } from "@tanstack/react-router";
 

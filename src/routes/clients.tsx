@@ -18,7 +18,7 @@ import {
   listClients,
   createClient,
   deleteClient,
-} from "@/server/clients.functions";
+} from "@/lib/server-fns/clients.functions";
 import valoraLogo from "@/assets/valora-logo.png";
 
 export const Route = createFileRoute("/clients")({

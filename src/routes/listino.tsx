@@ -29,7 +29,7 @@ import {
   upsertPriceItem,
   deletePriceItem,
   bulkImportPriceItems,
-} from "@/server/price-list.functions";
+} from "@/lib/server-fns/price-list.functions";
 import valoraLogo from "@/assets/valora-logo.png";
 
 export const Route = createFileRoute("/listino")({

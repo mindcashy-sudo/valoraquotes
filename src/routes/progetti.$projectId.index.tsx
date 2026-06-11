@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, FileSpreadsheet, GitBranch, MapPin, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
-import { getProject } from "@/server/computi.functions";
+import { getProject } from "@/lib/server-fns/computi.functions";
 import valoraLogo from "@/assets/valora-logo.png";
 
 export const Route = createFileRoute("/progetti/$projectId/")({

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, FileText, Plus, Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
-import { getClient, listClientQuotes } from "@/server/clients.functions";
+import { getClient, listClientQuotes } from "@/lib/server-fns/clients.functions";
 import valoraLogo from "@/assets/valora-logo.png";
 
 export const Route = createFileRoute("/clients/$clientId")({

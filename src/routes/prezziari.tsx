@@ -27,7 +27,7 @@ import {
   createPersonalPrezziario,
   importPriceItems,
   deletePrezziario,
-} from "@/server/prezziari.functions";
+} from "@/lib/server-fns/prezziari.functions";
 import valoraLogo from "@/assets/valora-logo.png";
 
 export const Route = createFileRoute("/prezziari")({

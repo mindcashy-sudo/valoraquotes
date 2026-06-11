@@ -2,12 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Loader2, CreditCard, ExternalLink, Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { getStudioProfile } from "@/server/studio.functions";
+import { getStudioProfile } from "@/lib/server-fns/studio.functions";
 import { StudioProfileForm, type StudioProfile } from "@/components/StudioProfileForm";
 import { Users, BookText } from "lucide-react";
 import valoraLogo from "@/assets/valora-logo.png";
 import { Button } from "@/components/ui/button";
-import { createCustomerPortalSession } from "@/server/stripe.functions";
+import { createCustomerPortalSession } from "@/lib/server-fns/stripe.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
