@@ -6,11 +6,11 @@ import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { QuoteDisplay, type QuoteData } from "@/components/QuoteDisplay";
 import { QuoteEditor } from "@/components/QuoteEditor";
 import { Paywall } from "@/components/Paywall";
-import { generateQuote } from "@/server/generate-quote.functions";
-import { getQuoteStatus, saveQuoteFn, migrateLocalQuotes } from "@/server/quotes.functions";
-import { syncCheckoutSession, syncCurrentStripeSubscription, createCheckoutSession } from "@/server/stripe.functions";
-import { getStudioProfile } from "@/server/studio.functions";
-import { listClients } from "@/server/clients.functions";
+import { generateQuote } from "@/lib/server-fns/generate-quote.functions";
+import { getQuoteStatus, saveQuoteFn, migrateLocalQuotes } from "@/lib/server-fns/quotes.functions";
+import { syncCheckoutSession, syncCurrentStripeSubscription, createCheckoutSession } from "@/lib/server-fns/stripe.functions";
+import { getStudioProfile } from "@/lib/server-fns/studio.functions";
+import { listClients } from "@/lib/server-fns/clients.functions";
 import { Button } from "@/components/ui/button";
 import {
   Select,

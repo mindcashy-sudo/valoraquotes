@@ -14,7 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth-context";
-import { listProjects, createProject, deleteProject } from "@/server/computi.functions";
+import { listProjects, createProject, deleteProject } from "@/lib/server-fns/computi.functions";
 import valoraLogo from "@/assets/valora-logo.png";
 
 export const Route = createFileRoute("/progetti/")({

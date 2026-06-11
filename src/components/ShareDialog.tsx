@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { shareQuote, unshareQuote, getQuoteShareInfo } from "@/server/share.functions";
+import { shareQuote, unshareQuote, getQuoteShareInfo } from "@/lib/server-fns/share.functions";
 
 interface ShareInfo {
   public_token: string | null;
